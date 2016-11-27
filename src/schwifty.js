@@ -1,7 +1,7 @@
 var Schwifty = (function() {
   console.log('dfd')
   this.animations = [];
-
+var animationTypes = ['opacity','transform','width','height','color','background-color']
   this.requestAnimationId = -1;
   this.styleEl = document.createElement('style');
   document.head.appendChild(this.styleEl);
@@ -16,6 +16,7 @@ var Schwifty = (function() {
       this.toVars = toVars;
       this.onComplete = toVars.onComplete;
       this.onUpdate = toVars.onUpdate;
+      this.onStart = toVars.onStart;
       this.id = id;
       this.selector=selector;
       this.prepareElement(elem, this.id);
@@ -35,6 +36,9 @@ var Schwifty = (function() {
     },
     animationStart: function(e) {
       if (e.animationName === this.id) {
+        if(this.onStart){
+        	this.onStart()
+        }
         this.running = true;
         this.counter = performance.now()
       }
@@ -140,7 +144,8 @@ var Schwifty = (function() {
     this.bodyAware = notify
   }
   const createSheet = (duration, fromVars, toVars, animationName, selector) => {
-var className=selector?selector:`.${animationName}`;
+  console.log(animationTypes)
+	var className = selector?selector:`.${animationName}`;
     var cssText = `@keyframes ${animationName} {0% {transform: translate(${fromVars.x}px, ${fromVars.y}px);}100% {transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
     this.styleEl.innerHTML += cssText
     console.log(this.styleEl.innerHTML)
