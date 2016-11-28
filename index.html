@@ -39,8 +39,9 @@
     Schwifty.bodyAware(true);
     setTimeout(() => {
       var t = Schwifty.from(elem2, 3, {
-        x: 100,
         y: 500,
+        opacity: 0, 
+        scale: .8,
         onComplete: (an) => {
           //console.log(an.toVars, an.elem)
           //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`

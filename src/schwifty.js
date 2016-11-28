@@ -9,6 +9,7 @@ var Schwifty = (function() {
 	this.styleSheet = this.styleEl.sheet;
 	var Fleeb = {
 		init: function(elem, duration, fromVars, toVars, id, selector) {
+			//TODO: add object validation
 			this.elem = elem;
 			this.duration = duration;
 			this.fromVars = fromVars;
@@ -151,21 +152,47 @@ var Schwifty = (function() {
 		var className = selector ? selector : `.${animationName}`;
 		var cssText = null;
 		if (fromVars && toVars) {
-			cssText = `@keyframes ${animationName} {from {transform: translate(${fromVars.x}px, ${fromVars.y}px);} to{transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+			cssText = `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} } to{ ${constructAnimation(toVars)} }} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
 		} else if (toVars) {
-			cssText = `@keyframes ${animationName} {to {transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
-		}else if(fromVars){
-			cssText = `@keyframes ${animationName} {from {transform: translate(${fromVars.x}px, ${fromVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`;
+			cssText = `@keyframes ${animationName} {to { ${constructAnimation(toVars)} }} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+		} else if (fromVars) {
+			cssText = `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} }} ${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`;
 		}
-		this.styleEl.innerHTML += cssText
-		console.log(this.styleEl.innerHTML)
+		this.styleEl.innerHTML += cssText;
 		return cssText;
+	}
+	const propertyCheck = (prop) => {
+		return typeof prop !== 'undefined' && prop !== null && prop !== '';
+	}
+	const constructAnimation = (vars) => {
+		let string = '';
+		let translateString = '';
+		if (propertyCheck(vars.x)) {
+			translateString += ` translateX(${vars.x}px)`
+		}
+		if (propertyCheck(vars.y)) {
+			translateString += ` translateY(${vars.y}px)`
+		}
+		if (propertyCheck(vars.scale)) {
+			translateString += ` scale(${vars.scale})`
+		}
+		if (propertyCheck(vars.opacity)) {
+			string+=` opacity:${vars.opacity};`
+		}
+		if(translateString){
+			string = `${string} transform:${translateString};`
+		}
+		return string;
+	}
+	const dump = () => {
+		return this.styleEl.innerHTML;
 	}
 	return {
 		fromTo: fromTo,
 		from: from,
 		to: to,
 		killAll: killAll,
-		bodyAware: bodyAware
+		bodyAware: bodyAware,
+		dump: dump
 	}
 })()
