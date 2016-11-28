@@ -8,12 +8,13 @@ var Schwifty = (function() {
 	// Grab style sheet
 	this.styleSheet = this.styleEl.sheet;
 	var Fleeb = {
-		init: function(elem, duration, fromVars, toVars, id, selector) {
+		init: function(elem, duration, fromVars, toVars, id, selector, stagger) {
 			//TODO: add object validation
 			this.elem = elem;
 			this.duration = duration;
 			this.fromVars = fromVars;
 			this.toVars = toVars;
+			this.stagger = stagger;
 			this.onComplete = toVars ? toVars.onComplete : fromVars.onComplete;
 			this.onUpdate = toVars ? toVars.onUpdate : fromVars.onUpdate;
 			this.onStart = toVars ? toVars.onStart : fromVars.onStart;
@@ -22,6 +23,7 @@ var Schwifty = (function() {
 			this.prepareElement(elem, this.id);
 			this.counter = -1;
 			this.completed = false;
+			console.log('id-', id)
 		},
 		storeCSS: function(text) {
 			this.cssText = text
@@ -54,7 +56,10 @@ var Schwifty = (function() {
 			if (!this.completed) {
 				this.completed = true;
 				this.running = false;
-				if (this.onComplete) {
+				if (!this.stagger && this.onComplete) {
+					this.onComplete(this)
+				}
+				if(this.stagger && this.stagger.index === this.stagger.total-1 && this.onComplete){
 					this.onComplete(this)
 				}
 				this.elem.removeEventListener("animationstart", this.animationStart);
@@ -70,7 +75,16 @@ var Schwifty = (function() {
 	const removeCompleted = an => {
 		var text = this.styleEl.innerHTML;
 		console.log('ending')
-		text = text.split(an.cssText).join('');
+			//remove just the elementStyle but keep the keyframes for stagger
+			//text = text.split(an.cssText).join('');
+		text = text.split(an.cssText.elementStyle).join('');
+		if (an.stagger) {
+			if (an.stagger.index === an.stagger.total - 1) {
+				text = text.split(an.cssText.keyframes).join('');
+			}
+		} else {
+			text = text.split(an.cssText.keyframes).join('');
+		}
 		if (an.toVars && an.toVars.fix === 'style') {
 			var className = an.selector ? an.selector : `.${an.id}`;
 			text += (`${className}{transform: translate(${an.toVars.x}px, ${an.toVars.y}px);}`)
@@ -105,9 +119,10 @@ var Schwifty = (function() {
 			document.body.classList.add('getting-schwifty')
 		}
 	}
-	const fromTo = (elem, duration, fromVars, toVars, callback) => {
+	const fromTo = (elem, duration, fromVars, toVars, callback, stagger) => {
+		console.log('sdfsd', this.styleEl.innerHTML)
 		var anim = create()
-		var id = getId()
+		var id = stagger ? stagger.id : getId()
 		var resp = (id, selector) => {
 			addToBody()
 				//TODO: check for existing animation id
@@ -115,7 +130,7 @@ var Schwifty = (function() {
 			if (this.requestAnimationId === -1) {
 				this.requestAnimationId = window.requestAnimationFrame(step)
 			}
-			anim.init(elem, duration, fromVars, toVars, id, selector)
+			anim.init(elem, duration, fromVars, toVars, id, selector, stagger)
 			anim.storeCSS(createSheet(duration, fromVars, toVars, id, selector))
 		}
 		if (callback && typeof callback === 'function') {
@@ -134,6 +149,19 @@ var Schwifty = (function() {
 	const from = (elem, duration, fromVars, callback) => {
 		return fromTo(elem, duration, fromVars, null, callback);
 	}
+	const staggerFrom = (elements, duration, fromVars, callback, stagger) => {
+		//TODO: propper join and reuse animations
+		const id = getId();
+		const startDelay = fromVars.delay || 0;
+		const total = elements.length;
+		return [...elements].map((elem, index) => fromTo(elem, duration, Object.assign({}, fromVars, {
+			delay: startDelay + index * stagger
+		}), null, callback, {
+			id,
+			index,
+			total
+		}))
+	}
 	const create = () => {
 		return Object.create(Fleeb)
 	}
@@ -150,15 +178,32 @@ var Schwifty = (function() {
 	const createSheet = (duration, fromVars, toVars, animationName, selector) => {
 		console.log(animationTypes)
 		var className = selector ? selector : `.${animationName}`;
-		var cssText = null;
+		var cssText = {
+			keyframes: '',
+			elementStyle: ''
+		};
 		if (fromVars && toVars) {
-			cssText = `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} } to{ ${constructAnimation(toVars)} }} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+			cssText = {
+				keyframes: `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} } to{ ${constructAnimation(toVars)} }}`,
+				elementStyle: ` ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`
+			};
 		} else if (toVars) {
-			cssText = `@keyframes ${animationName} {to { ${constructAnimation(toVars)} }} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+			cssText = {
+				keyframes: `@keyframes ${animationName} {to { ${constructAnimation(toVars)} }}`,
+				elementStyle: ` ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`
+			}
 		} else if (fromVars) {
-			cssText = `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} }} ${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`;
+			cssText = {
+				keyframes: `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} }}`,
+				elementStyle: `${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`
+			}
 		}
-		this.styleEl.innerHTML += cssText;
+		var innerHTML = this.styleEl.innerHTML;
+		if (innerHTML.indexOf(cssText.keyframes) < 0) {
+			innerHTML += cssText.keyframes;
+		}
+		innerHTML += cssText.elementStyle;
+		this.styleEl.innerHTML += innerHTML;
 		return cssText;
 	}
 	const propertyCheck = (prop) => {
@@ -177,9 +222,9 @@ var Schwifty = (function() {
 			translateString += ` scale(${vars.scale})`
 		}
 		if (propertyCheck(vars.opacity)) {
-			string+=` opacity:${vars.opacity};`
+			string += ` opacity:${vars.opacity};`
 		}
-		if(translateString){
+		if (translateString) {
 			string = `${string} transform:${translateString};`
 		}
 		return string;
@@ -191,6 +236,7 @@ var Schwifty = (function() {
 		fromTo: fromTo,
 		from: from,
 		to: to,
+		staggerFrom: staggerFrom,
 		killAll: killAll,
 		bodyAware: bodyAware,
 		dump: dump

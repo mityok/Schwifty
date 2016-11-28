@@ -27,27 +27,31 @@
 
 <body class="">
   <div name="asf" class="ddd">
+    123
   </div>
   <div name="asf" class="ddd bb cc">
     fefe
   </div>
+    <div name="asf" class="ddd cc">
+    465
+  </div>
   <script>
-    var elem = document.querySelector('.ddd');
-    var elem2 = document.querySelector('.ddd.bb');
-    var selector = OptimalSelect.select(elem)
+    var elems = document.querySelectorAll('.ddd');
+
+    var selector = OptimalSelect.select(elems)
     console.log(selector)
     Schwifty.bodyAware(true);
     setTimeout(() => {
-      var t = Schwifty.from(elem2, 3, {
-        y: 500,
+      var t = Schwifty.staggerFrom(elems, 8, {
+        x: 50,
         opacity: 0, 
         scale: .8,
         onComplete: (an) => {
-          //console.log(an.toVars, an.elem)
+          console.log('comp')
           //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
         },
         fix: 'style'
-      }, 'selector')
+      }, 'selector',3)
 
       //elem.parentNode.removeChild(elem);
       //Tween.killAll()
