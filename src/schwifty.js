@@ -5,7 +5,6 @@ var Schwifty = (function() {
 	this.styleEl = document.createElement('style');
 	this.styleEl.setAttribute('id','schwifty-library');
 	document.head.appendChild(this.styleEl);
-
 	// Grab style sheet
 	this.styleSheet = this.styleEl.sheet;
 	var Fleeb = {
@@ -88,7 +87,7 @@ var Schwifty = (function() {
 		}
 		if (an.toVars && an.toVars.fix === 'style') {
 			var className = an.selector ? an.selector : `.${an.id}`;
-			text += (`${className}{transform: translate(${an.toVars.x}px, ${an.toVars.y}px);}`)
+			text += (`${className}{${constructAnimation(an.toVars)}}`)
 		}
 		this.styleEl.innerHTML = text;
 	}
@@ -158,6 +157,19 @@ var Schwifty = (function() {
 		return [...elements].map((elem, index) => fromTo(elem, duration, Object.assign({}, fromVars, {
 			delay: startDelay + index * stagger
 		}), null, callback, {
+			id,
+			index,
+			total
+		}))
+	}
+	const staggerTo = (elements, duration, toVars, callback, stagger) => {
+		//TODO: propper join and reuse animations
+		const id = getId();
+		const startDelay = toVars.delay || 0;
+		const total = elements.length;
+		return [...elements].map((elem, index) => fromTo(elem, duration, null, Object.assign({}, toVars, {
+			delay: startDelay + index * stagger
+		}), callback, {
 			id,
 			index,
 			total
@@ -238,6 +250,7 @@ var Schwifty = (function() {
 		from: from,
 		to: to,
 		staggerFrom: staggerFrom,
+		staggerTo: staggerTo,
 		killAll: killAll,
 		bodyAware: bodyAware,
 		dump: dump
