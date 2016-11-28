@@ -42,21 +42,33 @@
     console.log(selector)
     Schwifty.bodyAware(true);
     setTimeout(() => {
-      var t = Schwifty.staggerTo(elems, 8, {
-        x: 50,
-        opacity: 0, 
-        scale: .8,
+      var t = Schwifty.to(elems[0], 1, {
+        x: 500,
         onComplete: (an) => {
           console.log('comp')
           //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
         },
         fix: 'style'
-      }, 'selector',3)
+      }, 'selector')
 
       //elem.parentNode.removeChild(elem);
       //Tween.killAll()
       //
     }, 2000)
+    setTimeout(() => {
+      var t = Schwifty.to(elems[0], 1, {
+        x: 0,
+        onComplete: (an) => {
+          console.log('comp')
+          //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
+        },
+        fix: 'style'
+      }, 'selector')
+
+      //elem.parentNode.removeChild(elem);
+      //Tween.killAll()
+      //
+    }, 4000)
   </script>
 </body>
 
