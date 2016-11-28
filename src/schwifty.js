@@ -244,6 +244,9 @@ var Schwifty = (function() {
 		if (propertyCheck(vars.scale)) {
 			translateString += ` scale(${vars.scale})`
 		}
+		if (propertyCheck(vars.rotate)) {
+			translateString += ` rotate(${vars.rotate}deg)`
+		}
 		if (propertyCheck(vars.opacity)) {
 			string += ` opacity:${vars.opacity};`
 		}
