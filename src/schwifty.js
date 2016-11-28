@@ -3,7 +3,7 @@ var Schwifty = (function() {
 	var animationTypes = ['opacity', 'transform', 'width', 'height', 'color', 'background-color']
 	this.requestAnimationId = -1;
 	this.styleEl = document.createElement('style');
-	this.styleEl.setAttribute('id','schwifty-library');
+	this.styleEl.setAttribute('id', 'schwifty-library');
 	document.head.appendChild(this.styleEl);
 	// Grab style sheet
 	this.styleSheet = this.styleEl.sheet;
@@ -26,6 +26,7 @@ var Schwifty = (function() {
 			console.log('id-', id)
 		},
 		storeCSS: function(text) {
+			console.log('storeCSS',text)
 			this.cssText = text
 		},
 		prepareElement: function(el, id) {
@@ -59,7 +60,7 @@ var Schwifty = (function() {
 				if (!this.stagger && this.onComplete) {
 					this.onComplete(this)
 				}
-				if(this.stagger && this.stagger.index === this.stagger.total-1 && this.onComplete){
+				if (this.stagger && this.stagger.index === this.stagger.total - 1 && this.onComplete) {
 					this.onComplete(this)
 				}
 				this.elem.removeEventListener("animationstart", this.animationStart);
@@ -87,18 +88,18 @@ var Schwifty = (function() {
 		}
 		if (an.toVars && an.toVars.fix === 'style') {
 			var className = an.selector ? an.selector : `.${an.id}`;
-			text += (`${className}{${constructAnimation(an.toVars)}}`)
+			text += (`${className}{${constructAnimation(an.toVars,true)}}`)
 		}
 		this.styleEl.innerHTML = text;
 	}
-	const set = (elem,toVars,callback) => {
+	const set = (elem, toVars, callback) => {
 		var selector = null;
 		if (callback && typeof callback === 'string' && callback === 'selector') {
 			selector = OptimalSelect.select(elem);
-		} 
+		}
 		var className = selector ? selector : `.${getId()}`;
 		var text = this.styleEl.innerHTML;
-		text += (`${className}{${constructAnimation(toVars)}}`)
+		text += (`${className}{${constructAnimation(toVars,true)}}`)
 		this.styleEl.innerHTML = text;
 	}
 	const step = (timestamp) => {
@@ -130,7 +131,6 @@ var Schwifty = (function() {
 		}
 	}
 	const fromTo = (elem, duration, fromVars, toVars, callback, stagger) => {
-		console.log('sdfsd', this.styleEl.innerHTML)
 		var anim = create()
 		var id = stagger ? stagger.id : getId()
 		var resp = (id, selector) => {
@@ -140,8 +140,8 @@ var Schwifty = (function() {
 			if (this.requestAnimationId === -1) {
 				this.requestAnimationId = window.requestAnimationFrame(step)
 			}
-			anim.init(elem, duration, fromVars, toVars, id, selector, stagger)
-			anim.storeCSS(createSheet(duration, fromVars, toVars, id, selector))
+			anim.init(elem, duration, fromVars, toVars, id, selector, stagger);
+			anim.storeCSS(createSheet(duration, fromVars, toVars, id, selector));
 		}
 		if (callback && typeof callback === 'function') {
 			callback(id, resp)
@@ -229,17 +229,19 @@ var Schwifty = (function() {
 		this.styleEl.innerHTML = innerHTML;
 		return cssText;
 	}
-	const propertyCheck = (prop) => {
+	const propertyCheck = prop => {
 		return typeof prop !== 'undefined' && prop !== null && prop !== '';
 	}
-	const constructAnimation = (vars) => {
+	const numberCheck = num => typeof num === 'number'
+	const constructAnimation = (vars, fix) => {
+		console.log(vars)
 		let string = '';
 		let translateString = '';
 		if (propertyCheck(vars.x)) {
-			translateString += ` translateX(${vars.x}px)`
+			translateString += ` translateX(${numberCheck(vars.x) ? `${vars.x}px` : vars.x})`
 		}
 		if (propertyCheck(vars.y)) {
-			translateString += ` translateY(${vars.y}px)`
+			translateString += ` translateY(${numberCheck(vars.y) ? `${vars.y}px` : vars.y})`
 		}
 		if (propertyCheck(vars.scale)) {
 			translateString += ` scale(${vars.scale})`
@@ -250,9 +252,13 @@ var Schwifty = (function() {
 		if (propertyCheck(vars.opacity)) {
 			string += ` opacity:${vars.opacity};`
 		}
-		if (translateString) {
-			string = `${string} transform:${translateString};`
+		if (propertyCheck(vars.transformOrigin)) {
+			string += ` transform-origin:${vars.transformOrigin};`
 		}
+		if (translateString) {
+			string = `${string} transform:${translateString} ${(fix && vars.important && vars.important.some(value => value === 'transform')) ? '!important':''};`
+		}
+		console.log('st-',string)
 		return string;
 	}
 	const dump = () => {

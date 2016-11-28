@@ -44,7 +44,8 @@
     Schwifty.set(elems[0],{x:1000},'selector')
     setTimeout(() => {
       Schwifty.to(elems[0], 8, {
-        x: 500,
+        x: '50%',
+        important:['transform'],
         onComplete: (an) => {
           console.log('comp')
           //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
