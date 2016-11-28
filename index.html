@@ -41,22 +41,22 @@
     //var selector = OptimalSelect.select(elems)
     //console.log(selector)
     Schwifty.bodyAware(true);
-    Schwifty.set(elems[0],{x:1000},'selector')
+    //Schwifty.set(elems[0],{x:1000},'selector')
     setTimeout(() => {
-      Schwifty.to(elems[0], 8, {
-        x: '50%',
+      Schwifty.staggerTo(elems, 1, {
+        x: ['50%',10,'10em'],
         important:['transform'],
         onComplete: (an) => {
           console.log('comp')
           //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
         },
         fix: 'style'
-      }, 'selector')
+      }, 'selector',0.1)
 
       //elem.parentNode.removeChild(elem);
       //Tween.killAll()
       //
-    }, 5000)
+    }, 2000)
     /*
     setTimeout(() => {
       var t = Schwifty.to(elems[0], 1, {

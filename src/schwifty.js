@@ -1,6 +1,6 @@
 var Schwifty = (function() {
 	this.animations = [];
-	var animationTypes = ['opacity', 'transform', 'width', 'height', 'color', 'background-color']
+	var animationTypes = ['opacity', 'x', 'y', 'scale', 'rotate', 'opacity']
 	this.requestAnimationId = -1;
 	this.styleEl = document.createElement('style');
 	this.styleEl.setAttribute('id', 'schwifty-library');
@@ -79,7 +79,7 @@ var Schwifty = (function() {
 			//remove just the elementStyle but keep the keyframes for stagger
 			//text = text.split(an.cssText).join('');
 		text = text.split(an.cssText.elementStyle).join('');
-		if (an.stagger) {
+		if (an.stagger && !an.stagger.splitValues) {
 			if (an.stagger.index === an.stagger.total - 1) {
 				text = text.split(an.cssText.keyframes).join('');
 			}
@@ -132,7 +132,7 @@ var Schwifty = (function() {
 	}
 	const fromTo = (elem, duration, fromVars, toVars, callback, stagger) => {
 		var anim = create()
-		var id = stagger ? stagger.id : getId()
+		var id = stagger && !stagger.splitValues ? stagger.id : getId()
 		var resp = (id, selector) => {
 			addToBody()
 				//TODO: check for existing animation id
@@ -159,30 +159,39 @@ var Schwifty = (function() {
 	const from = (elem, duration, fromVars, callback) => {
 		return fromTo(elem, duration, fromVars, null, callback);
 	}
+	
 	const staggerFrom = (elements, duration, fromVars, callback, stagger) => {
 		//TODO: propper join and reuse animations
 		const id = getId();
 		const startDelay = fromVars.delay || 0;
+		const splitValues = animationTypes.some(type => Array.isArray(fromVars[type]))
 		const total = elements.length;
 		return [...elements].map((elem, index) => fromTo(elem, duration, Object.assign({}, fromVars, {
-			delay: startDelay + index * stagger
+			delay: startDelay + index * stagger,
+			x:Array.isArray(fromVars.x)?fromVars.x[index]:fromVars.x,
+			y:Array.isArray(fromVars.y)?fromVars.y[index]:fromVars.y
 		}), null, callback, {
 			id,
 			index,
-			total
+			total,
+			splitValues
 		}))
 	}
 	const staggerTo = (elements, duration, toVars, callback, stagger) => {
 		//TODO: propper join and reuse animations
 		const id = getId();
 		const startDelay = toVars.delay || 0;
+		const splitValues = animationTypes.some(type => Array.isArray(toVars[type]))
 		const total = elements.length;
 		return [...elements].map((elem, index) => fromTo(elem, duration, null, Object.assign({}, toVars, {
-			delay: startDelay + index * stagger
+			delay: startDelay + index * stagger,
+			x:Array.isArray(toVars.x)?toVars.x[index]:toVars.x,
+			y:Array.isArray(toVars.y)?toVars.y[index]:toVars.y
 		}), callback, {
 			id,
 			index,
-			total
+			total,
+			splitValues
 		}))
 	}
 	const create = () => {
