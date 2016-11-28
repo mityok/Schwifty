@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <script type="text/javascript" src="./src/schwifty.js"></script>
+  <script type="text/javascript" src="https://rawgithub.com/Autarc/optimal-select/master/dist/optimal-select.min.js"></script>
+  <style type="text/css">
+    body,
+    html {
+      height: 100%;
+      background: #eee;
+    }
+    
+    div {
+      padding: 10px;
+      background: green;
+    }
+    
+    .getting-schwifty {
+      overflow: hidden;
+    }
+  </style>
+  <title>schwifty - css animation framework by mityok</title>
+
+</head>
+
+<body class="">
+  <div name="asf" class="ddd">
+  </div>
+  <div name="asf" class="ddd bb cc">
+    fefe
+  </div>
+  <script>
+    var elem = document.querySelector('.ddd');
+    var elem2 = document.querySelector('.ddd.bb');
+    var selector = OptimalSelect.select(elem)
+    console.log(selector)
+    Schwifty.bodyAware(true);
+    setTimeout(() => {
+      var t = Schwifty.fromTo(elem2, 3, {
+        x: 00,
+        y: 00
+      }, {
+        x: 100,
+        y: 500,
+        onComplete: (an) => {
+          console.log(an.toVars, an.elem)
+          an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
+        },
+        fix: 'style'
+      }, 'selector')
+
+      //elem.parentNode.removeChild(elem);
+      //Tween.killAll()
+      //
+    }, 2000)
+  </script>
+</body>
+
+</html>

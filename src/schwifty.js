@@ -99,15 +99,17 @@ var Schwifty = (function() {
 		}
 		this.requestAnimationId = window.requestAnimationFrame(step)
 	}
+	const addToBody = () =>{
+		if (this.animations.length === 0 && this.bodyAware) {
+				document.body.classList.add('getting-schwifty')
+			}
+	}
 	const fromTo = (elem, duration, fromVars, toVars, callback) => {
-
 		var anim = create()
 		var id = getId()
 		var resp = (id, selector) => {
-			if (this.animations.length === 0 && this.bodyAware) {
-				document.body.classList.add('getting-schwifty')
-			}
-			//check for existing animation id
+			addToBody()
+			//TODO: check for existing animation id
 			this.animations.push(anim)
 			if (this.requestAnimationId === -1) {
 				this.requestAnimationId = window.requestAnimationFrame(step)
@@ -118,16 +120,15 @@ var Schwifty = (function() {
 		if (callback && typeof callback === 'function') {
 			callback(id, resp)
 		} else if (callback && typeof callback === 'string' && callback === 'selector') {
-
 			var selector = OptimalSelect.select(elem)
-			console.log('sel', selector)
-			resp(id, selector)
+			resp(id, selector);
 		} else {
-			resp(id)
+			resp(id);
 		}
-
-
 		return anim;
+	}
+	const to = (elem, duration, toVars, callback) => {
+		return fromTo(elem, duration, null, toVars, callback);
 	}
 	const create = () => {
 		return Object.create(Fleeb)
@@ -145,7 +146,12 @@ var Schwifty = (function() {
 	const createSheet = (duration, fromVars, toVars, animationName, selector) => {
 		console.log(animationTypes)
 		var className = selector ? selector : `.${animationName}`;
-		var cssText = `@keyframes ${animationName} {0% {transform: translate(${fromVars.x}px, ${fromVars.y}px);}100% {transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+		var cssText = null;
+		if(fromVars && toVars){
+			cssText = `@keyframes ${animationName} {from {transform: translate(${fromVars.x}px, ${fromVars.y}px);} to{transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+		}else if(toVars){
+			cssText = `@keyframes ${animationName} {to {transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+		}
 		this.styleEl.innerHTML += cssText
 		console.log(this.styleEl.innerHTML)
 		return cssText;
