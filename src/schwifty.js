@@ -3,6 +3,7 @@ var Schwifty = (function() {
 	var animationTypes = ['opacity', 'transform', 'width', 'height', 'color', 'background-color']
 	this.requestAnimationId = -1;
 	this.styleEl = document.createElement('style');
+	this.styleEl.setAttribute('id','schwifty-library');
 	document.head.appendChild(this.styleEl);
 
 	// Grab style sheet
