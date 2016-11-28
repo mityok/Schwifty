@@ -38,15 +38,12 @@
     console.log(selector)
     Schwifty.bodyAware(true);
     setTimeout(() => {
-      var t = Schwifty.fromTo(elem2, 3, {
-        x: 00,
-        y: 00
-      }, {
+      var t = Schwifty.from(elem2, 3, {
         x: 100,
         y: 500,
         onComplete: (an) => {
-          console.log(an.toVars, an.elem)
-          an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
+          //console.log(an.toVars, an.elem)
+          //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
         },
         fix: 'style'
       }, 'selector')

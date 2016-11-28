@@ -13,9 +13,9 @@ var Schwifty = (function() {
 			this.duration = duration;
 			this.fromVars = fromVars;
 			this.toVars = toVars;
-			this.onComplete = toVars.onComplete;
-			this.onUpdate = toVars.onUpdate;
-			this.onStart = toVars.onStart;
+			this.onComplete = toVars ? toVars.onComplete : fromVars.onComplete;
+			this.onUpdate = toVars ? toVars.onUpdate : fromVars.onUpdate;
+			this.onStart = toVars ? toVars.onStart : fromVars.onStart;
 			this.id = id;
 			this.selector = selector;
 			this.prepareElement(elem, this.id);
@@ -56,8 +56,8 @@ var Schwifty = (function() {
 				if (this.onComplete) {
 					this.onComplete(this)
 				}
-				//this.elem.removeEventListener("animationstart", this.animationStart);
-				//this.elem.removeEventListener("animationend", this.animationEnd);
+				this.elem.removeEventListener("animationstart", this.animationStart);
+				this.elem.removeEventListener("animationend", this.animationEnd);
 			}
 		},
 		tick: function(timestamp) {
@@ -70,7 +70,7 @@ var Schwifty = (function() {
 		var text = this.styleEl.innerHTML;
 		console.log('ending')
 		text = text.split(an.cssText).join('');
-		if (an.toVars.fix === 'style') {
+		if (an.toVars && an.toVars.fix === 'style') {
 			var className = an.selector ? an.selector : `.${an.id}`;
 			text += (`${className}{transform: translate(${an.toVars.x}px, ${an.toVars.y}px);}`)
 		}
@@ -99,17 +99,17 @@ var Schwifty = (function() {
 		}
 		this.requestAnimationId = window.requestAnimationFrame(step)
 	}
-	const addToBody = () =>{
+	const addToBody = () => {
 		if (this.animations.length === 0 && this.bodyAware) {
-				document.body.classList.add('getting-schwifty')
-			}
+			document.body.classList.add('getting-schwifty')
+		}
 	}
 	const fromTo = (elem, duration, fromVars, toVars, callback) => {
 		var anim = create()
 		var id = getId()
 		var resp = (id, selector) => {
 			addToBody()
-			//TODO: check for existing animation id
+				//TODO: check for existing animation id
 			this.animations.push(anim)
 			if (this.requestAnimationId === -1) {
 				this.requestAnimationId = window.requestAnimationFrame(step)
@@ -130,6 +130,9 @@ var Schwifty = (function() {
 	const to = (elem, duration, toVars, callback) => {
 		return fromTo(elem, duration, null, toVars, callback);
 	}
+	const from = (elem, duration, fromVars, callback) => {
+		return fromTo(elem, duration, fromVars, null, callback);
+	}
 	const create = () => {
 		return Object.create(Fleeb)
 	}
@@ -147,10 +150,12 @@ var Schwifty = (function() {
 		console.log(animationTypes)
 		var className = selector ? selector : `.${animationName}`;
 		var cssText = null;
-		if(fromVars && toVars){
+		if (fromVars && toVars) {
 			cssText = `@keyframes ${animationName} {from {transform: translate(${fromVars.x}px, ${fromVars.y}px);} to{transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
-		}else if(toVars){
+		} else if (toVars) {
 			cssText = `@keyframes ${animationName} {to {transform: translate(${toVars.x}px, ${toVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`;
+		}else if(fromVars){
+			cssText = `@keyframes ${animationName} {from {transform: translate(${fromVars.x}px, ${fromVars.y}px);}} ${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`;
 		}
 		this.styleEl.innerHTML += cssText
 		console.log(this.styleEl.innerHTML)
@@ -158,6 +163,8 @@ var Schwifty = (function() {
 	}
 	return {
 		fromTo: fromTo,
+		from: from,
+		to: to,
 		killAll: killAll,
 		bodyAware: bodyAware
 	}
