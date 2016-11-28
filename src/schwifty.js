@@ -23,14 +23,14 @@ var Schwifty = (function() {
 			this.prepareElement(elem, this.id);
 			this.counter = -1;
 			this.completed = false;
-			console.log('id-', id)
+			//console.log('id-', id)
 		},
 		storeCSS: function(text) {
-			console.log('storeCSS',text)
+			//console.log('storeCSS',text)
 			this.cssText = text
 		},
 		prepareElement: function(el, id) {
-			console.log('prep', this.selector)
+			//console.log('prep', this.selector)
 			if (!el.classList.contains(id) && !this.selector) {
 				el.classList.add(id)
 			}
@@ -47,9 +47,9 @@ var Schwifty = (function() {
 			}
 		},
 		animationEnd: function(e) {
-			console.log('end', e.animationName === this.id, e.animationName, this.id)
+			//console.log('end', e.animationName === this.id, e.animationName, this.id)
 			if (e.animationName === this.id) {
-				console.log('end')
+				//console.log('end')
 				this.complete()
 			}
 		},
@@ -75,7 +75,7 @@ var Schwifty = (function() {
 	};
 	const removeCompleted = an => {
 		var text = this.styleEl.innerHTML;
-		console.log('ending')
+		//console.log('ending')
 			//remove just the elementStyle but keep the keyframes for stagger
 			//text = text.split(an.cssText).join('');
 		text = text.split(an.cssText.elementStyle).join('');
@@ -159,7 +159,7 @@ var Schwifty = (function() {
 	const from = (elem, duration, fromVars, callback) => {
 		return fromTo(elem, duration, fromVars, null, callback);
 	}
-	
+	//TODO: join both stagger animations
 	const staggerFrom = (elements, duration, fromVars, callback, stagger) => {
 		//TODO: propper join and reuse animations
 		const id = getId();
@@ -183,6 +183,14 @@ var Schwifty = (function() {
 		const startDelay = toVars.delay || 0;
 		const splitValues = animationTypes.some(type => Array.isArray(toVars[type]))
 		const total = elements.length;
+		//TODO: add better type modification for array values
+		//TODO: out of bound check for array values
+		/*
+		if(splitValues){
+			let spl = animationTypes.filter(type => Array.isArray(toVars[type])).map(prop => ({[prop]:toVars[prop]}))
+			console.log(spl)
+		}
+		*/
 		return [...elements].map((elem, index) => fromTo(elem, duration, null, Object.assign({}, toVars, {
 			delay: startDelay + index * stagger,
 			x:Array.isArray(toVars.x)?toVars.x[index]:toVars.x,
@@ -208,7 +216,7 @@ var Schwifty = (function() {
 		this.bodyAware = notify
 	}
 	const createSheet = (duration, fromVars, toVars, animationName, selector) => {
-		console.log(animationTypes)
+		//console.log(animationTypes)
 		var className = selector ? selector : `.${animationName}`;
 		var cssText = {
 			keyframes: '',
@@ -243,7 +251,7 @@ var Schwifty = (function() {
 	}
 	const numberCheck = num => typeof num === 'number'
 	const constructAnimation = (vars, fix) => {
-		console.log(vars)
+		//console.log(vars)
 		let string = '';
 		let translateString = '';
 		if (propertyCheck(vars.x)) {
@@ -267,7 +275,7 @@ var Schwifty = (function() {
 		if (translateString) {
 			string = `${string} transform:${translateString} ${(fix && vars.important && vars.important.some(value => value === 'transform')) ? '!important':''};`
 		}
-		console.log('st-',string)
+		//console.log('st-',string)
 		return string;
 	}
 	const dump = () => {
