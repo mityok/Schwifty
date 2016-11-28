@@ -91,6 +91,16 @@ var Schwifty = (function() {
 		}
 		this.styleEl.innerHTML = text;
 	}
+	const set = (elem,toVars,callback) => {
+		var selector = null;
+		if (callback && typeof callback === 'string' && callback === 'selector') {
+			selector = OptimalSelect.select(elem);
+		} 
+		var className = selector ? selector : `.${getId()}`;
+		var text = this.styleEl.innerHTML;
+		text += (`${className}{${constructAnimation(toVars)}}`)
+		this.styleEl.innerHTML = text;
+	}
 	const step = (timestamp) => {
 		var previousLength = animations.length;
 		animations = animations.filter(an => {
@@ -216,7 +226,7 @@ var Schwifty = (function() {
 			innerHTML += cssText.keyframes;
 		}
 		innerHTML += cssText.elementStyle;
-		this.styleEl.innerHTML += innerHTML;
+		this.styleEl.innerHTML = innerHTML;
 		return cssText;
 	}
 	const propertyCheck = (prop) => {
@@ -249,6 +259,7 @@ var Schwifty = (function() {
 		fromTo: fromTo,
 		from: from,
 		to: to,
+		set: set,
 		staggerFrom: staggerFrom,
 		staggerTo: staggerTo,
 		killAll: killAll,

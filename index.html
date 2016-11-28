@@ -38,11 +38,12 @@
   <script>
     var elems = document.querySelectorAll('.ddd');
 
-    var selector = OptimalSelect.select(elems)
-    console.log(selector)
+    //var selector = OptimalSelect.select(elems)
+    //console.log(selector)
     Schwifty.bodyAware(true);
+    Schwifty.set(elems[0],{x:1000},'selector')
     setTimeout(() => {
-      var t = Schwifty.to(elems[0], 1, {
+      Schwifty.to(elems[0], 8, {
         x: 500,
         onComplete: (an) => {
           console.log('comp')
@@ -54,7 +55,8 @@
       //elem.parentNode.removeChild(elem);
       //Tween.killAll()
       //
-    }, 2000)
+    }, 5000)
+    /*
     setTimeout(() => {
       var t = Schwifty.to(elems[0], 1, {
         x: 0,
@@ -69,6 +71,7 @@
       //Tween.killAll()
       //
     }, 4000)
+    */
   </script>
 </body>
 
