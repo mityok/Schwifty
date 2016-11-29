@@ -63,6 +63,10 @@ var Schwifty = (function() {
 				if (this.stagger && this.stagger.index === this.stagger.total - 1 && this.onComplete) {
 					this.onComplete(this)
 				}
+
+				if (this.toVars.fix !== 'style' && !this.selector && this.elem.classList.contains(this.id)) {
+					this.elem.classList.remove(this.id)
+				}
 				this.elem.removeEventListener("animationstart", this.animationStart);
 				this.elem.removeEventListener("animationend", this.animationEnd);
 			}
@@ -74,23 +78,22 @@ var Schwifty = (function() {
 		}
 	};
 	const removeCompleted = an => {
-		var text = this.styleEl.innerHTML;
+		//var text = this.styleEl.innerHTML;
 		//console.log('ending')
 			//remove just the elementStyle but keep the keyframes for stagger
 			//text = text.split(an.cssText).join('');
-		text = text.split(an.cssText.elementStyle).join('');
+		this.styleEl.innerHTML = this.styleEl.innerHTML.split(an.cssText.elementStyle).join('');
 		if (an.stagger && !an.stagger.splitValues) {
 			if (an.stagger.index === an.stagger.total - 1) {
-				text = text.split(an.cssText.keyframes).join('');
+				this.styleEl.innerHTML = this.styleEl.innerHTML.split(an.cssText.keyframes).join('');
 			}
 		} else {
-			text = text.split(an.cssText.keyframes).join('');
+			this.styleEl.innerHTML = this.styleEl.innerHTML.split(an.cssText.keyframes).join('');
 		}
 		if (an.toVars && an.toVars.fix === 'style') {
 			var className = an.selector ? an.selector : `.${an.id}`;
-			text += (`${className}{${constructAnimation(an.toVars,true)}}`)
+			this.styleEl.innerHTML += (`${className}{${constructAnimation(an.toVars,true)}}`)
 		}
-		this.styleEl.innerHTML = text;
 	}
 	const set = (elem, toVars, callback) => {
 		var selector = null;
@@ -98,9 +101,7 @@ var Schwifty = (function() {
 			selector = OptimalSelect.select(elem);
 		}
 		var className = selector ? selector : `.${getId()}`;
-		var text = this.styleEl.innerHTML;
-		text += (`${className}{${constructAnimation(toVars,true)}}`)
-		this.styleEl.innerHTML = text;
+		this.styleEl.innerHTML += (`${className}{${constructAnimation(toVars,true)}}`)
 	}
 	const step = (timestamp) => {
 		var previousLength = animations.length;
@@ -238,12 +239,11 @@ var Schwifty = (function() {
 				elementStyle: `${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`
 			}
 		}
-		var innerHTML = this.styleEl.innerHTML;
-		if (innerHTML.indexOf(cssText.keyframes) < 0) {
-			innerHTML += cssText.keyframes;
+
+		if (this.styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
+			this.styleEl.innerHTML += cssText.keyframes;
 		}
-		innerHTML += cssText.elementStyle;
-		this.styleEl.innerHTML = innerHTML;
+		this.styleEl.innerHTML += cssText.elementStyle;
 		return cssText;
 	}
 	const propertyCheck = prop => {

@@ -36,11 +36,11 @@
     465
   </div>
   <script>
-    var elems = document.querySelectorAll('.ddd');
+    var elems = document.querySelectorAll('.bb');
 
     //var selector = OptimalSelect.select(elems)
     //console.log(selector)
-    Schwifty.bodyAware(true);
+    //Schwifty.bodyAware(true);
     //Schwifty.set(elems[0],{x:1000},'selector')
     setTimeout(() => {
       Schwifty.staggerTo(elems, 1, {
@@ -52,12 +52,12 @@
           //an.elem.style.transform = `translate(${an.toVars.x}px, ${an.toVars.y}px)`
         },
         fix: 'style'
-      }, 'selector',0.1)
+      },0.1)
 
       //elem.parentNode.removeChild(elem);
       //Tween.killAll()
       //
-    }, 2000)
+    }, 1000)
     /*
     setTimeout(() => {
       var t = Schwifty.to(elems[0], 1, {
