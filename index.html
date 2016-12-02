@@ -14,11 +14,18 @@
     
     div {
       padding: 10px;
-      background: green;
+      background: #555;
+      margin: 5px;
+      width: 120px;
+      height: 80px;
+      border-radius: 3px;
+      border: 1px solid black;
     }
     
     .getting-schwifty {
       overflow: hidden;
+  background:#ccc;
+
     }
   </style>
   <title>schwifty - css animation framework by mityok</title>
@@ -26,23 +33,55 @@
 </head>
 
 <body class="">
-  <div name="asf" class="ddd">
+  <button class="btn btn-default" type="submit">Button</button>
+  <div name="asf" class="ddd schwifty-mine-1">
     123
   </div>
-  <div name="asf" class="ddd bb cc">
+  <div name="asf" class="ddd bb cc schwifty-mine-2">
     fefe
   </div>
-    <div name="asf" class="ddd cc">
+    <div name="asf" class="ddd cc schwifty-mine-3">
     465
   </div>
   <script>
     var elems = document.querySelectorAll('.bb');
+var btn = document.querySelector('button');
 
     //var selector = OptimalSelect.select(elems)
     //console.log(selector)
     //Schwifty.bodyAware(true);
     //Schwifty.set(elems[0],{x:1000},'selector')
     setTimeout(() => {
+      Schwifty.to(elems[0], 1, {
+        x: 10,
+         y: 100
+      }, 'selector');
+
+      //elem.parentNode.removeChild(elem);
+      //Tween.killAll()
+      //
+    }, 1000);
+
+      Schwifty.bodyClassUpdate(true);
+
+    btn.addEventListener('click', () => {
+  var anim = Schwifty.to(elems[0], 4, {opacity:1,x:'200%',y:100,scale:.5,rotate:90,important:['opacity'],fix:'style',onComplete:()=>{console.log( 'perf')}})
+  
+  setTimeout(()=>{
+
+  Schwifty.to(elems[0], 4, {x:200,fix:'style',onComplete:()=>{console.log( 'done')}})
+
+  /*
+  //can get values and perhapse calculate the curve
+  var stl = window.getComputedStyle(elems[0])
+  //console.log();
+  console.log(stl.getPropertyValue("opacity"));
+  console.log(Sch.matrixDeconstruct(stl.getPropertyValue("transform")))
+    Sch.to(elems[0], 4, {height:200,fix:'style'})
+*/
+  },2000)
+    })
+    /*
       Schwifty.staggerTo(elems, 1, {
         x: ['50%',10,'10em'],
          y: [20,40,60],
@@ -58,6 +97,7 @@
       //Tween.killAll()
       //
     }, 1000)
+    */
     /*
     setTimeout(() => {
       var t = Schwifty.to(elems[0], 1, {
