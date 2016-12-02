@@ -4,7 +4,8 @@ var Schwifty = (function() {
 			const fixedParams = {};
 			const animationTypes = ['opacity', 'x', 'y', 'scale', 'rotate', 'width', 'height']
 			const cssProperties = ['transform', 'opacity', 'width', 'height'];
-			let bodyAware = false;
+			let bodyData = null;
+	
 			let requestAnimationId = -1;
 			let styleEl = document.createElement('style');
 			styleEl.setAttribute('id', 'schwifty-library');
@@ -90,6 +91,7 @@ var Schwifty = (function() {
 			};
 			const getInterruptedValues = elem => {
 				const stl = window.getComputedStyle(elem)
+				console.log(stl,elem)
 				let transform = stl.getPropertyValue('transform');
 				let initValue = {}
 				if (transform) {
@@ -103,9 +105,7 @@ var Schwifty = (function() {
 				return tempProps
 			}
 			const removeCompleted = an => {
-
-				const interruptedValues = an.interrupted && an.elem && getInterruptedValues(an.elem)
-
+				const interruptedValues = an.interrupted && an.elem && getInterruptedValues(an.elem);
 				styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.elementStyle).join('');
 				if (an.stagger) {
 					if (an.stagger.splitValues) {
@@ -129,7 +129,6 @@ var Schwifty = (function() {
 			}
 
 			const cleanUpOnComplete = (className, vars, interruptedValues) => {
-
 				let animationVars = animationTypes.concat(['important']).filter(type => propertyCheck(vars[type])).reduce((a, b) => {
 					a[b] = vars[b];
 					return a;
@@ -180,13 +179,19 @@ var Schwifty = (function() {
 				requestAnimationId = window.requestAnimationFrame(step)
 			}
 			const removeFromBody = () => {
-				if (bodyAware) {
+				if (bodyData && bodyData.className) {
+					styleEl.innerHTML = styleEl.innerHTML.split(bodyData.className).join('');
+				}else if(bodyData){
 					document.body.classList.remove('getting-schwifty');
 				}
 			}
 			const addToBody = () => {
-				if (animations.length === 0 && bodyAware) {
-					document.body.classList.add('getting-schwifty')
+				if (animations.length === 0 && bodyData) {
+					if (bodyData.className) {
+						styleEl.innerHTML += bodyData.className;
+					}else {
+						document.body.classList.add('getting-schwifty');
+					}
 				}
 			}
 			const fromTo = (elem, duration, fromVars, toVars, callback, stagger) => {
@@ -211,7 +216,7 @@ var Schwifty = (function() {
 
 					//console.log('animName', stagger.id, id, (stagger && stagger.id) || id || selector)
 					anim.init(elem, duration, fromVars, toVars, id, selector, stagger, animRemoveCallback);
-					console.log('names', id, selector);
+					//console.log('names', id, selector);
 					anim.storeCSS(createSheet(duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || getId() || selector, /*className*/ selector ? selector : `.${id}`));
 					//anim.storeCSS(createSheet(duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || id || selector, /*className*/ selector ? selector : `.${id}`));
 				}
@@ -299,8 +304,11 @@ var Schwifty = (function() {
 			const getId = () => {
 				return 'schwifty-xxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16));
 			}
-			const bodyClassUpdate = (notify) => {
-				bodyAware = notify
+			const bodyClassUpdate = (notify, className) => {
+				if(className){
+					document.body.classList.add('getting-schwifty');
+				}
+				bodyData = {notify, className}
 			}
 			const createSheet = (duration, fromVars, toVars, animationName, className) => {
 				//console.log('names', animationName, className)

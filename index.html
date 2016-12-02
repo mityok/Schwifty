@@ -21,12 +21,12 @@
       border-radius: 3px;
       border: 1px solid black;
     }
-    
+    /*
     .getting-schwifty {
       overflow: hidden;
-  background:#ccc;
-
+      background:#ccc;
     }
+    */
   </style>
   <title>schwifty - css animation framework by mityok</title>
 
@@ -44,7 +44,7 @@
     465
   </div>
   <script>
-    var elems = document.querySelectorAll('.bb');
+    var elems = document.querySelectorAll('.ddd');
 var btn = document.querySelector('button');
 
     //var selector = OptimalSelect.select(elems)
@@ -54,7 +54,8 @@ var btn = document.querySelector('button');
     setTimeout(() => {
       Schwifty.to(elems[0], 1, {
         x: 10,
-         y: 100
+         y: 100,
+        fix:'style',
       }, 'selector');
 
       //elem.parentNode.removeChild(elem);
@@ -62,7 +63,7 @@ var btn = document.querySelector('button');
       //
     }, 1000);
 
-      Schwifty.bodyClassUpdate(true);
+    Schwifty.bodyClassUpdate(true,'.getting-schwifty {overflow: hidden;background:#ccc;}');
 
     btn.addEventListener('click', () => {
   var anim = Schwifty.to(elems[0], 4, {opacity:1,x:'200%',y:100,scale:.5,rotate:90,important:['opacity'],fix:'style',onComplete:()=>{console.log( 'perf')}})
