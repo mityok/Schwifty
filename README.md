@@ -8,5 +8,6 @@
   5. create showcase/tests for various scenarios
   6. add support for pseudo elements
   7. add support for easing functions
+  8. width/height/left/right/top/bottom/etc needs starting value
 
  

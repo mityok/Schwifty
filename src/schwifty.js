@@ -2,10 +2,11 @@
 var Schwifty = (function() {
 			let animations = [];
 			const fixedParams = {};
-			const animationTypes = ['opacity', 'x', 'y', 'scale', 'rotate', 'width', 'height']
-			const cssProperties = ['transform', 'opacity', 'width', 'height'];
+			const animationTypes = ['opacity', 'x', 'y', 'scale', 'skew', 'rotate', 'width', 'height', 'backgroundColor', 'color', 'top', 'left', 'bottom', 'right']
+			const cssProperties = ['transform', 'opacity', 'width', 'height', 'backgroundColor', 'color', 'top', 'left', 'bottom', 'right'];
+			const startDemandingProps = [ 'width', 'height', 'top', 'left', 'bottom', 'right'];
 			let bodyData = null;
-	
+
 			let requestAnimationId = -1;
 			let styleEl = document.createElement('style');
 			styleEl.setAttribute('id', 'schwifty-library');
@@ -77,9 +78,12 @@ var Schwifty = (function() {
 						this.removeCallback(this)
 					}
 				},
+				pause(){
+					console.log('pause', this.elem)
+				},
 				stop(fire) {
 					//should fire event or not
-					console.log('stop', this.elem)
+					//console.log('stop', this.elem)
 					this.interrupted = true;
 					this.complete()
 				},
@@ -90,8 +94,7 @@ var Schwifty = (function() {
 				}
 			};
 			const getInterruptedValues = elem => {
-				const stl = window.getComputedStyle(elem)
-				console.log(stl,elem)
+				const stl = window.getComputedStyle(elem);
 				let transform = stl.getPropertyValue('transform');
 				let initValue = {}
 				if (transform) {
@@ -109,7 +112,7 @@ var Schwifty = (function() {
 				styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.elementStyle).join('');
 				if (an.stagger) {
 					if (an.stagger.splitValues) {
-						this.styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
+						styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
 					} else if (an.stagger.index === an.stagger.total - 1) {
 						styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
 					}
@@ -153,12 +156,18 @@ var Schwifty = (function() {
 				styleEl.innerHTML += fixValues;
 			}
 			const set = (elem, toVars, callback) => {
-				const selector = null;
+				let selector = null;
 				if (callback && typeof callback === 'string' && callback === 'selector') {
 					selector = OptimalSelect.select(elem);
 				}
+				if(!selector){
+					const existingClass = elem.className.split(" ").find(cls => cls.indexOf('schwifty-') >= 0);
+					//to do cleanUpOnComplete
+					selector = `.${existingClass}`
+				}
 				const className = selector ? selector : `.${getId()}`;
-				styleEl.innerHTML += (`${className}{${constructAnimation(toVars, true)}}`)
+				cleanUpOnComplete(className,toVars)
+				//styleEl.innerHTML += (`${className}{${constructAnimation(toVars, true)}}`)
 			}
 			const step = (timestamp) => {
 				const previousLength = animations.length;
@@ -181,7 +190,7 @@ var Schwifty = (function() {
 			const removeFromBody = () => {
 				if (bodyData && bodyData.className) {
 					styleEl.innerHTML = styleEl.innerHTML.split(bodyData.className).join('');
-				}else if(bodyData){
+				} else if (bodyData) {
 					document.body.classList.remove('getting-schwifty');
 				}
 			}
@@ -189,7 +198,7 @@ var Schwifty = (function() {
 				if (animations.length === 0 && bodyData) {
 					if (bodyData.className) {
 						styleEl.innerHTML += bodyData.className;
-					}else {
+					} else {
 						document.body.classList.add('getting-schwifty');
 					}
 				}
@@ -204,7 +213,7 @@ var Schwifty = (function() {
 					//TODO: test performance 
 				const existingClass = elem.className.split(" ").find(cls => cls.indexOf('schwifty-') >= 0)
 				const id = existingClass || (stagger && !stagger.splitValues && callback ? stagger.id : getId())
-					//console.log('id',id)
+				console.log('toVars',toVars)
 				const resp = (id, selector) => {
 					addToBody()
 						//console.log('staggerId',id,stagger.id,selector)
@@ -258,6 +267,7 @@ var Schwifty = (function() {
 				//TODO: propper join and reuse animations
 				const id = getId();
 				const startDelay = (toVars && toVars.delay) || (fromVars && fromVars.delay) || 0;
+				console.log('startDelay',startDelay,stagger)
 				const splitValues = (toVars && animationTypes.some(type => Array.isArray(toVars[type]))) || (fromVars && animationTypes.some(type => Array.isArray(fromVars[type])))
 				const total = elements.length;
 				const splitToVarsTypes = toVars && animationTypes.filter(type => Array.isArray(toVars[type]))
@@ -305,13 +315,16 @@ var Schwifty = (function() {
 				return 'schwifty-xxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16));
 			}
 			const bodyClassUpdate = (notify, className) => {
-				if(className){
+				if (className) {
 					document.body.classList.add('getting-schwifty');
 				}
-				bodyData = {notify, className}
+				bodyData = {
+					notify,
+					className
+				}
 			}
 			const createSheet = (duration, fromVars, toVars, animationName, className) => {
-				//console.log('names', animationName, className)
+				console.log('names', animationName, className)
 				let cssText = {
 					keyframes: '',
 					elementStyle: ''
@@ -341,7 +354,7 @@ var Schwifty = (function() {
 					styleEl.innerHTML += cssText.keyframes;
 				}
 				styleEl.innerHTML += cssText.elementStyle;
-				//console.log(cssText)
+				console.log(cssText)
 				return cssText;
 			}
 			const propertyCheck = prop => {
@@ -352,25 +365,38 @@ var Schwifty = (function() {
 					let string = '';
 					let translateString = '';
 					if (propertyCheck(vars.x)) {
-						translateString += ` translateX(${numberCheck(vars.x) ? `${vars.x}px` : vars.x})`
+						translateString += ` translateX(${numberCheck(vars.x) ? `${vars.x}px` : vars.x})`;
     }
     if (propertyCheck(vars.y)) {
-      translateString += ` translateY(${numberCheck(vars.y) ? `${vars.y}px` : vars.y})`
+      translateString += ` translateY(${numberCheck(vars.y) ? `${vars.y}px` : vars.y})`;
     }
     if (propertyCheck(vars.scale)) {
-      translateString += ` scale(${vars.scale})`
+      translateString += ` scale(${vars.scale})`;
     }
     if (propertyCheck(vars.rotate)) {
-      translateString += ` rotate(${vars.rotate}deg)`
+      translateString += ` rotate(${vars.rotate}deg)`;
     }
     if (propertyCheck(vars.opacity)) {
-      string += ` opacity:${vars.opacity} ${importantDeclaration(vars.important,'opacity',fix)};`
+      string += ` opacity:${vars.opacity} ${importantDeclaration(vars.important,'opacity',fix)};`;
     }
+		if (propertyCheck(vars.color)) {
+      string += ` color:${vars.color} ${importantDeclaration(vars.important,'color',fix)};`;
+    }
+		if (propertyCheck(vars.backgroundColor)) {
+      string += ` background-color:${vars.backgroundColor} ${importantDeclaration(vars.important,'backgroundColor',fix)};`;
+    }
+				
     if (propertyCheck(vars.width)) {
-      string += ` width:${numberCheck(vars.width) ? `${vars.width}px` : vars.width} ${importantDeclaration(vars.important,'width',fix)};`
+      string += ` width:${numberCheck(vars.width) ? `${vars.width}px` : vars.width} ${importantDeclaration(vars.important,'width',fix)};`;
     }
     if (propertyCheck(vars.height)) {
-      string += ` height:${numberCheck(vars.height) ? `${vars.height}px` : vars.height} ${importantDeclaration(vars.important,'height',fix)};`
+      string += ` height:${numberCheck(vars.height) ? `${vars.height}px` : vars.height} ${importantDeclaration(vars.important,'height',fix)};`;
+    }
+		if (propertyCheck(vars.left)) {
+      string += ` left:${numberCheck(vars.left) ? `${vars.left}px` : vars.left} ${importantDeclaration(vars.important,'left',fix)};`;
+    }
+		if (propertyCheck(vars.top)) {
+      string += ` top:${numberCheck(vars.top) ? `${vars.top}px` : vars.top} ${importantDeclaration(vars.important,'top',fix)};`;
     }
     if (propertyCheck(vars.transformOrigin)) {
       string += ` transform-origin:${vars.transformOrigin};`
