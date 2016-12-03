@@ -267,7 +267,6 @@ var Schwifty = (function() {
 				//TODO: propper join and reuse animations
 				const id = getId();
 				const startDelay = (toVars && toVars.delay) || (fromVars && fromVars.delay) || 0;
-				console.log('startDelay',startDelay,stagger)
 				const splitValues = (toVars && animationTypes.some(type => Array.isArray(toVars[type]))) || (fromVars && animationTypes.some(type => Array.isArray(fromVars[type])))
 				const total = elements.length;
 				const splitToVarsTypes = toVars && animationTypes.filter(type => Array.isArray(toVars[type]))
