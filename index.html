@@ -31,6 +31,9 @@
     .mult{
       position: relative;
     }
+    .offset{
+      left: 20px;
+    }
   </style>
   <title>schwifty - css animation framework by mityok</title>
 </head>
@@ -58,6 +61,10 @@
   <aside>
     <button class="btn5">Multiple properties from to</button>
     <div class="eee mult schwifty-mine-9">1</div>
+  </aside>
+  <aside>
+    <button class="btn6">elastic to</button>
+    <div class="fff mult offset schwifty-mine-10">1</div>
   </aside>
   <script>
     //body update
@@ -104,6 +111,11 @@
     var eee = document.querySelector('.eee');
     document.querySelector('.btn5').addEventListener('click', () => {
       Schwifty.fromTo(eee, 5,{left:0,top:0,color:'red',backgroundColor:'yellow'},{left:200,top:50,color:'#0f0',backgroundColor:'#ccc',fix:'style',delay:2});  
+    });
+    //Elastic
+    var fff = document.querySelector('.fff');
+    document.querySelector('.btn6').addEventListener('click', () => {
+      Schwifty.to(fff, 5,{left:200, top: '50%',fix:'style',ease:'easeOutElastic',delay:2});  
     });
   </script>
 </body>

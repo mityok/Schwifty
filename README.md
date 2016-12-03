@@ -10,5 +10,6 @@
   7. add support for easing functions - (elastic requires initial value)
   8. width/height/left/right/top/bottom/etc needs starting value
   9. add support for incremental values - x:'-=50'
+  10. add support for calc value
 
  

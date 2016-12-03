@@ -5,8 +5,9 @@ var Schwifty = (function() {
 			const animationTypes = ['opacity', 'x', 'y', 'scale', 'skew', 'rotate', 'width', 'height', 'backgroundColor', 'color', 'top', 'left', 'bottom', 'right']
 			const cssProperties = ['transform', 'opacity', 'width', 'height', 'backgroundColor', 'color', 'top', 'left', 'bottom', 'right'];
 			const startDemandingProps = [ 'width', 'height', 'top', 'left', 'bottom', 'right'];
+			const specialEasings = [ 'easeOutElastic', 'easeOutBounce'];
+			const cssUnits = [ 'cm', 'px', 'pt', '%', 'em', 'ex', 'in',	'mm',	'pc',	'vh', 'vw',	'vmin'];
 			let bodyData = null;
-
 			let requestAnimationId = -1;
 			let styleEl = document.createElement('style');
 			styleEl.setAttribute('id', 'schwifty-library');
@@ -97,7 +98,7 @@ var Schwifty = (function() {
 				const stl = window.getComputedStyle(elem);
 				let transform = stl.getPropertyValue('transform');
 				let initValue = {}
-				if (transform) {
+				if (transform && transform !== 'none') {
 					initValue = matrixDeconstruct(transform)
 				}
 				const tempProps = cssProperties.slice(1).reduce((acc, prop) => {
@@ -130,12 +131,13 @@ var Schwifty = (function() {
 				}, {})
 				return res;
 			}
-
-			const cleanUpOnComplete = (className, vars, interruptedValues) => {
-				let animationVars = animationTypes.concat(['important']).filter(type => propertyCheck(vars[type])).reduce((a, b) => {
+			const getAnimationVars =  vars => animationTypes.concat(['important']).filter(type => propertyCheck(vars[type])).reduce((a, b) => {
 					a[b] = vars[b];
 					return a;
 				}, {})
+			
+			const cleanUpOnComplete = (className, vars, interruptedValues) => {
+				let animationVars = getAnimationVars(vars);
 				if (interruptedValues) {
 					animationVars = crossReferenceWithExpectedVars(animationVars, interruptedValues)
 				}
@@ -251,7 +253,13 @@ var Schwifty = (function() {
 				removeCompleted(an)
 			}
 			const to = (elem, duration, toVars, callback) => {
-				return fromTo(elem, duration, null, toVars, callback);
+				const specialEase = specialEasings.find(ease=>ease === toVars.ease);
+				let from = null;
+				if(specialEase){
+					const vals = getInterruptedValues(elem);
+					from = crossReferenceWithExpectedVars(getAnimationVars(toVars),vals)
+				}
+				return fromTo(elem, duration, from, toVars, callback);
 			}
 			const from = (elem, duration, fromVars, callback) => {
 					return fromTo(elem, duration, fromVars, null, callback);
@@ -322,32 +330,71 @@ var Schwifty = (function() {
 					className
 				}
 			}
+
+			const buildKeyFrames = (fromVars, toVars, animationName) => {
+				const specialEase = specialEasings.find(ease=>ease === toVars.ease);
+				if(specialEase){
+					const STEPS = 10;
+					const variableSteps = [...Array(STEPS).keys()].map(()=>({}));
+					let allEqualUnits = true;
+					const res = Object.keys(fromVars).reduce((acc, key) => {
+						const unitFrom = unitSplit(fromVars[key]);
+						const unitTo = unitSplit(toVars[key]);
+						let stepValues = null;
+						if(compareUnits(unitFrom,unitTo)){
+							stepValues = [...Array(STEPS).keys()].map(incr => variableSteps[incr][key] = (unitFrom[0] + (unitTo[0]-unitFrom[0])*(incr+1)/STEPS)+(unitTo.length===2?unitTo[1]:0) )
+						}else{
+							allEqualUnits = false;
+						}
+						console.log(key,unitFrom,unitTo,compareUnits(unitFrom,unitTo),stepValues)
+
+						return acc;
+					},{});
+					//if(allEqualUnits){
+						const elastic = variableSteps.reduce((acc,stp,index) => `${acc} ${(index+1)/STEPS*100}%{ ${stp ? constructAnimation(stp) : ''} }`,'')
+						return (`@keyframes ${animationName} { ${elastic} }`)
+						//TODO: need to create array of vars [{toVars,fromVars},{toVars,fromVars}...{toVars,fromVars}]
+					//}
+					//console.log(res,allEqualUnits,variableSteps)
+				}
+				return `@keyframes ${animationName} {from { ${fromVars ? constructAnimation(fromVars) : '' } } to{ ${toVars ? constructAnimation(toVars) : '' } }}`;
+			}
+			const compareUnits = (unitFrom, unitTo) => {
+				if(unitFrom.length ===2 && unitTo.length === 2 && unitFrom[1] === unitTo[1]){
+					return true;
+				}
+				if(unitFrom.length === 1 && unitTo.length ===1){
+					return true;
+				}
+				if(unitFrom.length === 1 && unitTo.length === 2 && unitTo[1] === 'px'){
+					return true;
+				}
+				if(unitTo.length === 1 && unitFrom.length === 2 && unitFrom[1] === 'px'){
+					return true;
+				}
+				return false;
+			}
+			const unitSplit = value => {
+				if(numberCheck(value)){
+					return [value]
+				}
+				const arr = value.match(/(\d+)|\D+$/g);
+				arr[0] = parseInt(arr[0],10);
+				return arr;
+			};
+			
 			const createSheet = (duration, fromVars, toVars, animationName, className) => {
 				console.log('names', animationName, className)
-				let cssText = {
-					keyframes: '',
-					elementStyle: ''
-				};
 				const prevValues = fixedParams[className]
 				if (prevValues) {
 					toVars = Object.assign({}, prevValues.vars, toVars)
 				}
-				if (fromVars && toVars) {
-					cssText = {
-						keyframes: `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} } to{ ${constructAnimation(toVars)} }}`,
-						elementStyle: `${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`
-					};
-				} else if (toVars) {
-					cssText = {
-						keyframes: `@keyframes ${animationName} {to { ${constructAnimation(toVars)} }}`,
-						elementStyle: ` ${className}{animation: ${animationName} ${duration}s both ${toVars.ease || 'linear'} ${toVars.delay || 0}s;}`
-					}
-				} else if (fromVars) {
-					cssText = {
-						keyframes: `@keyframes ${animationName} {from { ${constructAnimation(fromVars)} }}`,
-						elementStyle: `${className}{animation: ${animationName} ${duration}s both ${fromVars.ease || 'linear'} ${fromVars.delay || 0}s;}`
-					}
-				}
+				const specialEase = specialEasings.find(ease=>ease === toVars.ease);
+
+				const cssText = {
+					keyframes: buildKeyFrames(fromVars, toVars, animationName),
+					elementStyle: `${className}{animation: ${animationName} ${duration}s both ${specialEase?'linear':( toVars.ease || 'linear')} ${toVars.delay || 0}s;}`
+				};
 
 				if (styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
 					styleEl.innerHTML += cssText.keyframes;
