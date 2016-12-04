@@ -329,6 +329,7 @@ var Schwifty = (function() {
 			}
 			const compareUnitsForVars =(fromVars, toVars) =>{
 				let allEqualUnits = true;
+				let notEqualVars = null;
 				const res = Object.keys(fromVars).reduce((acc, key) => {
 					if(key !== 'important'){
 						//console.log(key,fromVars[key],toVars[key])
@@ -338,14 +339,27 @@ var Schwifty = (function() {
 						if (compareUnits(unitFrom, unitTo)) {
 							acc[key] = {unitFrom, unitTo}
 						} else {
-							acc[key] = {unitFrom, unitTo, notEqual:true};
+							const notEqual = (unitTo[1] !== '' && unitFrom[1] !== '') ? 'both':(unitTo[1] !== ''?'to':'from');
+							notEqualVars = calulateVarsToRecheck(notEqualVars, notEqual)
+							acc[key] = {unitFrom, unitTo, notEqual};
 							allEqualUnits = false;
 						}
 						//console.log(key, unitFrom, unitTo, compareUnits(unitFrom, unitTo), stepValues)
 					}
 					return acc;
 				}, {});
-				return {allEqualUnits,res}
+				return {allEqualUnits,res,notEqualVars}
+			}
+			const calulateVarsToRecheck = (notEqualVars, notEqual) => {
+				if(!notEqualVars){
+					return notEqual;
+				}else if(notEqualVars === 'both' || notEqual === 'both' || (notEqualVars === 'from' && notEqual === 'to') || (notEqualVars === 'to' && notEqual === 'from')){
+					return 'both'
+				}else if(notEqualVars === 'from' && notEqual === 'from'){
+					return 'from'
+				}else if(notEqualVars === 'to' && notEqual === 'to'){
+					return 'to'
+				}
 			}
 			const buildKeyFramesAnimation = (res, animationName) => {
 				const STEPS = 20;
@@ -355,7 +369,8 @@ var Schwifty = (function() {
 					[...Array(STEPS).keys()].map(incr => {
 							const dir = (-1 + 2 * ((incr + 1) % 2));
 							const stepCalc = (unitTo[0] - unitFrom[0]) * easeInElastic((incr + 1)  / STEPS);
-							return variableSteps[incr][key] = (unitFrom[0] + stepCalc) + (unitTo.length === 2 ? unitTo[1] : 0);
+						//TODO: fix takes unit from to params
+							return variableSteps[incr][key] = round((unitFrom[0] + stepCalc),3) + (unitTo[1] === '' ? 0: unitTo[1]);
 					})
 				})
 				const elastic = variableSteps.reduce((accum, stp, index) => `${accum} ${round((index+1)/STEPS*100,3)}%{ ${stp ? constructAnimation(stp) : ''} }`, '')
@@ -364,17 +379,20 @@ var Schwifty = (function() {
 			const buildKeyFrames = (elem, fromVars, toVars, animationName, className) => {
 				const specialEase = specialEasings.find(ease => ease === toVars.ease);
 				if (specialEase) {
-					const {allEqualUnits,res} = compareUnitsForVars(fromVars,toVars)
+					const {allEqualUnits,res, notEqualVars} = compareUnitsForVars(fromVars,toVars)
+					console.log('recheck',allEqualUnits,res,notEqualVars)
 					if(allEqualUnits){
 						return buildKeyFramesAnimation(res, animationName)
 					}else{
-						const test = `${className}{${constructAnimation(toVars, true)}}`;
-						styleEl.innerHTML += test;
-						//not all units are equal need to resample the element
-						const vals = getInterruptedValues(elem);
-						const toVarsFixed = crossReferenceWithExpectedVars(getAnimationVars(toVars), getInterruptedValues(elem));
-						styleEl.innerHTML = styleEl.innerHTML.split(test).join('');
-						const {allEqualUnits,res} = compareUnitsForVars(fromVars,toVarsFixed);
+						if(notEqualVars === 'to'){
+							toVars = resampleDomValues(elem, className, toVars)
+						}else if (notEqualVars === 'from'){
+							fromVars = resampleDomValues(elem, className, fromVars)
+						}else if(notEqualVars === 'both'){
+							toVars = resampleDomValues(elem, className, toVars)
+							fromVars = resampleDomValues(elem, className, fromVars)
+						}
+						const {allEqualUnits,res} = compareUnitsForVars(fromVars,toVars);
 						//console.log('recheck',allEqualUnits,res)
 						if(allEqualUnits){
 							return buildKeyFramesAnimation(res, animationName);
@@ -383,34 +401,27 @@ var Schwifty = (function() {
 				}
 				return `@keyframes ${animationName} {from { ${fromVars ? constructAnimation(fromVars) : '' } } to{ ${toVars ? constructAnimation(toVars) : '' } }}`;
 			}
-			
+			const resampleDomValues = (elem, className, vars) => {
+				const test = `${className}{${constructAnimation(vars, true)}}`;
+				styleEl.innerHTML += test;
+						//not all units are equal need to resample the element
+				const varsFixed = crossReferenceWithExpectedVars(getAnimationVars(vars), getInterruptedValues(elem));
+				styleEl.innerHTML = styleEl.innerHTML.split(test).join('');
+				return varsFixed;
+			}
 			//https://gist.github.com/gre/1650294
 			
 			const easeInElastic = (t) =>  (0.04 - 0.04 / t) * Math.sin(25 * t) + 1;
 			
-			const compareUnits = (unitFrom, unitTo) => {
-				if (unitFrom.length === 2 && unitTo.length === 2 && unitFrom[1] === unitTo[1]) {
-					return true;
-				}
-				if (unitFrom.length === 1 && unitTo.length === 1) {
-					return true;
-				}
-				if (unitFrom.length === 1 && unitTo.length === 2 && unitTo[1] === 'px') {
-					return true;
-				}
-				if (unitTo.length === 1 && unitFrom.length === 2 && unitFrom[1] === 'px') {
-					return true;
-				}
-				return false;
-			}
+			const compareUnits = (unitFrom, unitTo) => unitFrom[1] === unitTo[1];
 			const unitSplit = value => {
 				if (numberCheck(value)) {
-					return [value];
+					return [value,''];
 				}
 				const arr = value.match(/^(\d+(?:\.\d+)?)(.*)$/).splice(1);
 				arr[0] = parseInt(arr[0], 10);
-				if(arr[1] === ''){
-					return [arr[0]];
+				if(arr[1] === 'px'){
+					arr[1] = '';
 				}
 				return arr;
 			};
@@ -432,7 +443,7 @@ var Schwifty = (function() {
 					styleEl.innerHTML += cssText.keyframes;
 				}
 				styleEl.innerHTML += cssText.elementStyle;
-				//console.log(cssText)
+				console.log(cssText)
 				return cssText;
 			}
 			const propertyCheck = prop => {

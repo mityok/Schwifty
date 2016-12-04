@@ -65,12 +65,16 @@
     <div class="eee mult schwifty-mine-9">1</div>
   </aside>
   <aside class="bound">
-    <button class="btn6">elastic to</button>
+    <button class="btn6">Elastic to</button>
     <div class="fff mult offset schwifty-mine-10">1</div>
+  </aside>
+  <aside>
+    <button class="btn7">Elastic fromTo</button>
+    <div class="ggg mult schwifty-mine-11">1</div>
   </aside>
   <script>
     //body update
-    Schwifty.bodyClassUpdate(true,'.getting-schwifty {overflow: hidden;background:#f2f2f2;}');
+    //Schwifty.bodyClassUpdate(true,'.getting-schwifty {overflow: hidden;background:#f8f8f8;}');
     //Basic stagger:
     var aaa = document.querySelectorAll('.aaa');
     document.querySelector('.btn1').addEventListener('click', () => {
@@ -119,6 +123,11 @@
     var fff = document.querySelector('.fff');
     document.querySelector('.btn6').addEventListener('click', () => {
       Schwifty.to(fff, 1,{left:Math.floor(Math.random()*400), top: `${Math.floor(Math.random()*100)}%`, fix:'style',ease:'easeOutElastic',delay:0,important:['left','top']});  
+    });
+    //Elastic
+    var ggg = document.querySelector('.ggg');
+    document.querySelector('.btn7').addEventListener('click', () => {
+      Schwifty.fromTo(ggg, 1,{left:`${50}%`,top:'4pt'},{left:`${10}px`,top:100, fix:'style',ease:'easeOutElastic',delay:0,important:['left','top']});  
     });
   </script>
 </body>
