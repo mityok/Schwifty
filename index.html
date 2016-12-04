@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <script type="text/javascript" src="./src/schwifty.js"></script>
@@ -8,7 +9,7 @@
     body,
     html {
       height: 100%;
-      margin:0;
+      margin: 0;
       background: #fff;
     }
     
@@ -22,54 +23,77 @@
       border: 1px dashed #ccc;
       display: inline-block;
     }
-    aside{
-      margin:10px;
-      padding:5px;
-      border:1px solid #ccc;
+    
+    aside {
+      margin: 10px;
+      padding: 5px;
+      border: 1px solid #ccc;
     }
-    .mult{
+    
+    .mult {
       position: relative;
     }
-    .offset{
+    
+    .offset {
       left: 20px;
     }
-    aside.bound{
+    
+    aside.bound {
       height: 120px;
+    }
+    
+    .cont {
+      background: #ccc;
+      height: 0;
+      overflow: hidden;
     }
   </style>
   <title>schwifty - css animation framework by mityok</title>
 </head>
+
 <body>
-  <aside>
-    <button class="btn1">Basic staggerTo</button>
+  <aside> <button class="btn1">Basic staggerTo</button>
     <div class="aaa schwifty-mine-1">1</div>
     <div class="aaa schwifty-mine-2">2</div>
     <div class="aaa schwifty-mine-3">3</div>
   </aside>
-  <aside>
-    <button class="btn2">Change Animation to</button>
+  <aside> <button class="btn2">Change Animation to</button>
     <div class="bbb schwifty-mine-4">1</div>
   </aside>
-  <aside>
-    <button class="btn3">Multi-value staggerTo</button>
+  <aside> <button class="btn3">Multi-value staggerTo</button>
     <div class="ccc schwifty-mine-5">1</div>
     <div class="ccc schwifty-mine-6">2</div>
     <div class="ccc schwifty-mine-7">3</div>
   </aside>
-  <aside>
-    <button class="btn4">Set Position</button>
+  <aside> <button class="btn8">Height 0 to auto</button>
+    <main class="hhh cont schwifty-mine-12">
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+      <div>1</div>
+    </main>
+  </aside>
+  <aside> <button class="btn4">Set Position</button>
     <div class="ddd schwifty-mine-8">1</div>
   </aside>
-  <aside>
-    <button class="btn5">Multiple properties from to</button>
+  <aside> <button class="btn5">Multiple properties from to</button>
     <div class="eee mult schwifty-mine-9">1</div>
   </aside>
-  <aside class="bound">
-    <button class="btn6">Elastic to</button>
+  <aside class="bound"> <button class="btn6">Elastic to</button>
     <div class="fff mult offset schwifty-mine-10">1</div>
   </aside>
-  <aside>
-    <button class="btn7">Elastic fromTo</button>
+  <aside> <button class="btn7">Elastic fromTo</button>
     <div class="ggg mult schwifty-mine-11">1</div>
   </aside>
   <script>
@@ -79,55 +103,116 @@
     var aaa = document.querySelectorAll('.aaa');
     document.querySelector('.btn1').addEventListener('click', () => {
       Schwifty.staggerTo(aaa, 3, {
-          x: '50%',
-           y: 60,
-          onComplete: (an) => {
-            console.log('comp')
-          },
-          ease:'cubic-bezier(0.42, 0, 0.58, 1)',
-          fix: 'style'
-        },null,0.3);
+        x: '50%',
+        y: 60,
+        onComplete: (an) => {
+          console.log('comp')
+        },
+        ease: 'cubic-bezier(0.42, 0, 0.58, 1)',
+        fix: 'style'
+      }, null, 0.3);
     });
     //Multi-value stagger:
     var ccc = document.querySelectorAll('.ccc');
     document.querySelector('.btn3').addEventListener('click', () => {
       Schwifty.staggerTo(ccc, 1, {
-          x: ['50%',10,'10em'],
-           y: [20,40,60],
-          important:['transform'],
-          onComplete: (an) => {
-            console.log('comp 3')
-          },
-          fix: 'style'
-        },null,0.1);
-    })
+        x: ['50%', 10, '10em'],
+        y: [20, 40, 60],
+        important: ['transform'],
+        onComplete: (an) => {
+          console.log('comp 3')
+        },
+        fix: 'style'
+      }, null, 0.1);
+    });
     //Change Animation:
     var bbb = document.querySelector('.bbb');
     document.querySelector('.btn2').addEventListener('click', () => {
-      Schwifty.to(bbb, 4, {opacity:1,x:'200%',y:100,scale:.5,rotate:90,important:['opacity'],fix:'style',onComplete:()=>{console.log( 'bbb end')}});
-      setTimeout(()=>{
-        Schwifty.to(bbb, 4, {x:200,fix:'style',onComplete:()=>{console.log( 'done')}});
-      },2000)
+      Schwifty.to(bbb, 4, {
+        opacity: 1,
+        x: '200%',
+        y: 100,
+        scale: .5,
+        rotate: 90,
+        important: ['opacity'],
+        fix: 'style',
+        onComplete: () => {
+          console.log('bbb end')
+        }
+      });
+      setTimeout(() => {
+        Schwifty.to(bbb, 4, {
+          x: 200,
+          fix: 'style',
+          onComplete: () => {
+            console.log('done')
+          }
+        });
+      }, 2000)
     });
     //Set position:
     var ddd = document.querySelector('.ddd');
     document.querySelector('.btn4').addEventListener('click', () => {
-      Schwifty.set(ddd, {opacity:Math.random(),x:`${Math.ceil(Math.random()*200)}%`,rotate:Math.ceil(Math.random()*90)});  
+      Schwifty.set(ddd, {
+        opacity: Math.random(),
+        x: `${Math.ceil(Math.random()*200)}%`,
+        rotate: Math.ceil(Math.random() * 90)
+      });
     });
     ///Multiple properties from to
     var eee = document.querySelector('.eee');
     document.querySelector('.btn5').addEventListener('click', () => {
-      Schwifty.fromTo(eee, 5,{left:0,top:0,color:'red',backgroundColor:'yellow'},{left:200,top:50,color:'#0f0',backgroundColor:'#ccc',fix:'style',delay:2});  
+      Schwifty.fromTo(eee, 5, {
+        left: 0,
+        top: 0,
+        color: 'red',
+        backgroundColor: 'yellow'
+      }, {
+        left: 200,
+        top: 50,
+        color: '#0f0',
+        backgroundColor: '#ccc',
+        fix: 'style',
+        delay: 2
+      });
     });
     //Elastic
     var fff = document.querySelector('.fff');
     document.querySelector('.btn6').addEventListener('click', () => {
-      Schwifty.to(fff, 1,{left:Math.floor(Math.random()*400), top: `${Math.floor(Math.random()*100)}%`, fix:'style',ease:'easeOutElastic',delay:0,important:['left','top']});  
+      Schwifty.to(fff, 1, {
+        left: Math.floor(Math.random() * 400),
+        top: `${Math.floor(Math.random()*100)}%`,
+        fix: 'style',
+        ease: 'easeOutElastic',
+        delay: 0,
+        important: ['left', 'top']
+      });
     });
-    //Elastic
+    //Elastic fromTo
     var ggg = document.querySelector('.ggg');
     document.querySelector('.btn7').addEventListener('click', () => {
-      Schwifty.fromTo(ggg, 1,{left:`${50}%`,top:'4pt'},{left:`${10}px`,top:100, fix:'style',ease:'easeOutElastic',delay:0,important:['left','top']});  
+      Schwifty.fromTo(ggg, 1, {
+        left: `${50}%`,
+        top: '4pt'
+      }, {
+        left: `${10}px`,
+        top: 100,
+        fix: 'style',
+        ease: 'easeOutElastic',
+        delay: 0,
+        important: ['left', 'top']
+      });
+    });
+    //Height 0 to auto
+    var hhh = document.querySelector('.hhh');
+    document.querySelector('.btn8').addEventListener('click', () => {
+      Schwifty.to(hhh, 1, {
+        height: 'auto',
+        immediateRender: true,
+        fix: 'style',
+        ease: 'easeOutElastic',
+        important: ['height']
+      });
     });
   </script>
 </body>
