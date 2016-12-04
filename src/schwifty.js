@@ -215,21 +215,18 @@ var Schwifty = (function() {
 					//TODO: test performance 
 				const existingClass = elem.className.split(" ").find(cls => cls.indexOf('schwifty-') >= 0)
 				const id = existingClass || (stagger && !stagger.splitValues && callback ? stagger.id : getId())
-				console.log('toVars', toVars)
+				//console.log('toVars', toVars)
 				const resp = (id, selector) => {
 					addToBody()
-						//console.log('staggerId',id,stagger.id,selector)
-						//TODO: check for existing animation id
+					//console.log('staggerId',id,stagger.id,selector)
+					//TODO: check for existing animation id
 					animations.push(anim)
 					if (requestAnimationId === -1) {
 						requestAnimationId = window.requestAnimationFrame(step)
 					}
-
-					//console.log('animName', stagger.id, id, (stagger && stagger.id) || id || selector)
 					anim.init(elem, duration, fromVars, toVars, id, selector, stagger, animRemoveCallback);
 					//console.log('names', id, selector);
 					anim.storeCSS(createSheet(elem, duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || getId() || selector, /*className*/ selector ? selector : `.${id}`));
-					//anim.storeCSS(createSheet(duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || id || selector, /*className*/ selector ? selector : `.${id}`));
 				}
 
 				if (callback && typeof callback === 'function') {
@@ -334,7 +331,7 @@ var Schwifty = (function() {
 				let allEqualUnits = true;
 				const res = Object.keys(fromVars).reduce((acc, key) => {
 					if(key !== 'important'){
-						console.log(key,fromVars[key],toVars[key])
+						//console.log(key,fromVars[key],toVars[key])
 						const unitFrom = unitSplit(fromVars[key]);
 						const unitTo = unitSplit(toVars[key]);
 						let stepValues = null;
@@ -344,9 +341,8 @@ var Schwifty = (function() {
 							acc[key] = {unitFrom, unitTo, notEqual:true};
 							allEqualUnits = false;
 						}
-						console.log(key, unitFrom, unitTo, compareUnits(unitFrom, unitTo), stepValues)
+						//console.log(key, unitFrom, unitTo, compareUnits(unitFrom, unitTo), stepValues)
 					}
-
 					return acc;
 				}, {});
 				return {allEqualUnits,res}
@@ -379,7 +375,7 @@ var Schwifty = (function() {
 						const toVarsFixed = crossReferenceWithExpectedVars(getAnimationVars(toVars), getInterruptedValues(elem));
 						styleEl.innerHTML = styleEl.innerHTML.split(test).join('');
 						const {allEqualUnits,res} = compareUnitsForVars(fromVars,toVarsFixed);
-						console.log('recheck',allEqualUnits,res)
+						//console.log('recheck',allEqualUnits,res)
 						if(allEqualUnits){
 							return buildKeyFramesAnimation(res, animationName);
 						}
@@ -387,6 +383,9 @@ var Schwifty = (function() {
 				}
 				return `@keyframes ${animationName} {from { ${fromVars ? constructAnimation(fromVars) : '' } } to{ ${toVars ? constructAnimation(toVars) : '' } }}`;
 			}
+			
+			//https://gist.github.com/gre/1650294
+			
 			const easeInElastic = (t) =>  (0.04 - 0.04 / t) * Math.sin(25 * t) + 1;
 			
 			const compareUnits = (unitFrom, unitTo) => {
@@ -408,17 +407,16 @@ var Schwifty = (function() {
 				if (numberCheck(value)) {
 					return [value];
 				}
-				/*
-				"100.567px".match(/^(\d+(?:\.\d+)?)(.*)$/);
-["100.567px", "100.567", "px"]
-				*/
-				const arr = value.match(/(\d+)|\D+$/g);
+				const arr = value.match(/^(\d+(?:\.\d+)?)(.*)$/).splice(1);
 				arr[0] = parseInt(arr[0], 10);
+				if(arr[1] === ''){
+					return [arr[0]];
+				}
 				return arr;
 			};
 
 			const createSheet = (elem, duration, fromVars, toVars, animationName, className) => {
-				console.log('names', animationName, className)
+				//console.log('names', animationName, className)
 				const prevValues = fixedParams[className]
 				if (prevValues) {
 					toVars = Object.assign({}, prevValues.vars, toVars)
@@ -434,7 +432,7 @@ var Schwifty = (function() {
 					styleEl.innerHTML += cssText.keyframes;
 				}
 				styleEl.innerHTML += cssText.elementStyle;
-				console.log(cssText)
+				//console.log(cssText)
 				return cssText;
 			}
 			const propertyCheck = prop => {
