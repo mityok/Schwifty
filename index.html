@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <script type="text/javascript" src="./src/schwifty.js"></script>
@@ -15,12 +14,12 @@
     
     div {
       padding: 10px;
-      background: #555;
+      background: #eee;
       margin: 5px;
       width: 120px;
       height: 80px;
       border-radius: 3px;
-      border: 1px solid black;
+      border: 1px dashed #ccc;
       display: inline-block;
     }
     aside{
@@ -33,6 +32,9 @@
     }
     .offset{
       left: 20px;
+    }
+    aside.bound{
+      height: 120px;
     }
   </style>
   <title>schwifty - css animation framework by mityok</title>
@@ -62,7 +64,7 @@
     <button class="btn5">Multiple properties from to</button>
     <div class="eee mult schwifty-mine-9">1</div>
   </aside>
-  <aside>
+  <aside class="bound">
     <button class="btn6">elastic to</button>
     <div class="fff mult offset schwifty-mine-10">1</div>
   </aside>
@@ -115,7 +117,7 @@
     //Elastic
     var fff = document.querySelector('.fff');
     document.querySelector('.btn6').addEventListener('click', () => {
-      Schwifty.to(fff, 1,{left:200, top: '50%',fix:'style',ease:'easeOutElastic',delay:0,important:['left']});  
+      Schwifty.to(fff, 1,{left:Math.floor(Math.random()*400), top: `${Math.floor(Math.random()*100)}%`, fix:'style',ease:'easeOutElastic',delay:0,important:['left','top']});  
     });
   </script>
 </body>

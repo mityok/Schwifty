@@ -228,7 +228,7 @@ var Schwifty = (function() {
 					//console.log('animName', stagger.id, id, (stagger && stagger.id) || id || selector)
 					anim.init(elem, duration, fromVars, toVars, id, selector, stagger, animRemoveCallback);
 					//console.log('names', id, selector);
-					anim.storeCSS(createSheet(duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || getId() || selector, /*className*/ selector ? selector : `.${id}`));
+					anim.storeCSS(createSheet(elem, duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || getId() || selector, /*className*/ selector ? selector : `.${id}`));
 					//anim.storeCSS(createSheet(duration, fromVars, toVars, /*animName*/ (stagger && stagger.id) || id || selector, /*className*/ selector ? selector : `.${id}`));
 				}
 
@@ -330,45 +330,65 @@ var Schwifty = (function() {
 					className
 				}
 			}
+			const compareUnitsForVars =(fromVars, toVars) =>{
+				let allEqualUnits = true;
+				const res = Object.keys(fromVars).reduce((acc, key) => {
+					if(key !== 'important'){
+						console.log(key,fromVars[key],toVars[key])
+						const unitFrom = unitSplit(fromVars[key]);
+						const unitTo = unitSplit(toVars[key]);
+						let stepValues = null;
+						if (compareUnits(unitFrom, unitTo)) {
+							acc[key] = {unitFrom, unitTo}
+						} else {
+							acc[key] = {unitFrom, unitTo, notEqual:true};
+							allEqualUnits = false;
+						}
+						console.log(key, unitFrom, unitTo, compareUnits(unitFrom, unitTo), stepValues)
+					}
 
-			const buildKeyFrames = (fromVars, toVars, animationName) => {
+					return acc;
+				}, {});
+				return {allEqualUnits,res}
+			}
+			const buildKeyFramesAnimation = (res, animationName) => {
+				const STEPS = 20;
+				const variableSteps = [...Array(STEPS).keys()].map(() => ({}));
+				Object.keys(res).map(key => {
+					const {unitTo, unitFrom} = res[key];
+					[...Array(STEPS).keys()].map(incr => {
+							const dir = (-1 + 2 * ((incr + 1) % 2));
+							const stepCalc = (unitTo[0] - unitFrom[0]) * easeInElastic((incr + 1)  / STEPS);
+							return variableSteps[incr][key] = (unitFrom[0] + stepCalc) + (unitTo.length === 2 ? unitTo[1] : 0);
+					})
+				})
+				const elastic = variableSteps.reduce((accum, stp, index) => `${accum} ${round((index+1)/STEPS*100,3)}%{ ${stp ? constructAnimation(stp) : ''} }`, '')
+				return (`@keyframes ${animationName} { ${elastic} }`)
+			}
+			const buildKeyFrames = (elem, fromVars, toVars, animationName, className) => {
 				const specialEase = specialEasings.find(ease => ease === toVars.ease);
 				if (specialEase) {
-					const STEPS = 5;
-					const variableSteps = [...Array(STEPS).keys()].map(() => ({}));
-					let allEqualUnits = true;
-					const res = Object.keys(fromVars).reduce((acc, key) => {
-						if(key !== 'important'){
-							const unitFrom = unitSplit(fromVars[key]);
-							const unitTo = unitSplit(toVars[key]);
-							let stepValues = null;
-							
-							if (compareUnits(unitFrom, unitTo)) {
-								stepValues = [...Array(STEPS).keys()].map(incr => {
-									const dir = (-1 + 2 * ((incr+1) % 2));
-									const stepCalc = (unitTo[0] - unitFrom[0]) * Math.pow((1-(incr + 1) / STEPS),3);
-									console.log(incr, dir, stepCalc, (unitTo[0] + dir * stepCalc))
-									return variableSteps[incr][key] = (unitTo[0] + dir * stepCalc) + (unitTo.length === 2 ? unitTo[1] : 0);
-									})
-							} else {
-								allEqualUnits = false;
-							}
-							console.log(key, unitFrom, unitTo, compareUnits(unitFrom, unitTo), stepValues)
+					const {allEqualUnits,res} = compareUnitsForVars(fromVars,toVars)
+					if(allEqualUnits){
+						return buildKeyFramesAnimation(res, animationName)
+					}else{
+						const test = `${className}{${constructAnimation(toVars, true)}}`;
+						styleEl.innerHTML += test;
+						//not all units are equal need to resample the element
+						const vals = getInterruptedValues(elem);
+						const toVarsFixed = crossReferenceWithExpectedVars(getAnimationVars(toVars), getInterruptedValues(elem));
+						styleEl.innerHTML = styleEl.innerHTML.split(test).join('');
+						const {allEqualUnits,res} = compareUnitsForVars(fromVars,toVarsFixed);
+						console.log('recheck',allEqualUnits,res)
+						if(allEqualUnits){
+							return buildKeyFramesAnimation(res, animationName);
 						}
-
-						return acc;
-					}, {});
-					//if(allEqualUnits){
-					// #{((1 - triple((10 - $i)/10))) * 100%} {
-					
-					const elastic = variableSteps.reduce((acc, stp, index) => `${acc} ${round((1 - Math.pow((STEPS - (index+1))/STEPS,3))*100,3)}%{ ${stp ? constructAnimation(stp) : ''} }`, '')
-					return (`@keyframes ${animationName} { ${elastic} }`)
-						//TODO: need to create array of vars [{toVars,fromVars},{toVars,fromVars}...{toVars,fromVars}]
-						//}
-						//console.log(res,allEqualUnits,variableSteps)
+					}
 				}
 				return `@keyframes ${animationName} {from { ${fromVars ? constructAnimation(fromVars) : '' } } to{ ${toVars ? constructAnimation(toVars) : '' } }}`;
 			}
+			const easeInElastic = (t) =>  (0.04 - 0.04 / t) * Math.sin(25 * t) + 1;
+			
 			const compareUnits = (unitFrom, unitTo) => {
 				if (unitFrom.length === 2 && unitTo.length === 2 && unitFrom[1] === unitTo[1]) {
 					return true;
@@ -386,14 +406,18 @@ var Schwifty = (function() {
 			}
 			const unitSplit = value => {
 				if (numberCheck(value)) {
-					return [value]
+					return [value];
 				}
+				/*
+				"100.567px".match(/^(\d+(?:\.\d+)?)(.*)$/);
+["100.567px", "100.567", "px"]
+				*/
 				const arr = value.match(/(\d+)|\D+$/g);
 				arr[0] = parseInt(arr[0], 10);
 				return arr;
 			};
 
-			const createSheet = (duration, fromVars, toVars, animationName, className) => {
+			const createSheet = (elem, duration, fromVars, toVars, animationName, className) => {
 				console.log('names', animationName, className)
 				const prevValues = fixedParams[className]
 				if (prevValues) {
@@ -402,7 +426,7 @@ var Schwifty = (function() {
 				const specialEase = specialEasings.find(ease => ease === toVars.ease);
 
 				const cssText = {
-					keyframes: buildKeyFrames(fromVars, toVars, animationName),
+					keyframes: buildKeyFrames(elem, fromVars, toVars, animationName, className),
 					elementStyle: `${className}{animation: ${animationName} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':( toVars.ease || 'linear')} ${toVars.delay || 0}s;}`
 				};
 
