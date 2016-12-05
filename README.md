@@ -13,5 +13,11 @@
   10. add support for calc value
   11. flatten floating point values
   12. optimize elastic resampling for stagger
+  
+  performance:
+  
+  1. will-change improves dramatically - should add on animation
+  2. need to optimize add and remove on stagger (no multiple createSheet and removeCompleted)
+  
 
  
