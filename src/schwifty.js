@@ -26,6 +26,7 @@ var Schwifty = (function() {
       this.onComplete = toVars ? toVars.onComplete : fromVars.onComplete;
       this.onUpdate = toVars ? toVars.onUpdate : fromVars.onUpdate;
       this.onStart = toVars ? toVars.onStart : fromVars.onStart;
+			this.delay = toVars ? toVars.delay : fromVars.delay;
       this.id = id;
       this.selector = selector;
       this.counter = -1;
@@ -35,18 +36,27 @@ var Schwifty = (function() {
       this.animationStart = this.animationStart.bind(this);
       this.animationEnd = this.animationEnd.bind(this);
       this.removeCallback = removeCallback;
-      this.prepareElement(elem, this.id);
+      this.prepareElement(elem, this.id, stagger);
+			this.counter = performance.now() + ((this.stagger && this.stagger.delay) || this.delay ||0) *1000;
     },
     storeCSS(text) {
       this.cssText = text
     },
-    prepareElement(el, id) {
-      if (!el.classList.contains(id) && !this.selector) {
+    prepareElement(el, id, stagger) {
+			//console.log(this.selector)
+      if (this.selector && this.selector === 'provide' && !el.classList.contains(id)) {
         el.classList.add(id)
       }
-      el.addEventListener("animationstart", this.animationStart, false);
-      el.addEventListener("animationend", this.animationEnd, false);
+			//if(!stagger || (stagger && stagger.index === stagger.total - 1)){
+      	//el.addEventListener('animationstart', this.animationStart, false);
+      	//el.addEventListener('animationend', this.animationEnd, false);
+			//}
     },
+		start(){
+			//console.log('start')
+			 this.running = true;
+       //this.counter = performance.now()
+		},
     animationStart(e) {
       if (e.animationName === this.id) {
         if (this.onStart) {
@@ -63,6 +73,7 @@ var Schwifty = (function() {
       }
     },
     complete() {
+			console.log('compl',this.completed);
       if (!this.completed) {
         this.completed = true;
         this.running = false;
@@ -75,8 +86,10 @@ var Schwifty = (function() {
         if ((this.fromVars && this.fromVars.fix !== 'style') && (this.toVars && this.toVars.fix !== 'style') && !this.selector && this.elem.classList.contains(this.id)) {
           this.elem.classList.remove(this.id)
         }
-        this.elem.removeEventListener("animationstart", this.animationStart);
-        this.elem.removeEventListener("animationend", this.animationEnd);
+				//if(!this.stagger || (this.stagger && this.stagger.index === this.stagger.total - 1)){
+        	//this.elem.removeEventListener('animationstart', this.animationStart);
+        	//this.elem.removeEventListener('animationend', this.animationEnd);
+				//}
         this.removeCallback(this)
       }
     },
@@ -90,6 +103,10 @@ var Schwifty = (function() {
       this.complete()
     },
     tick(timestamp) {
+			if(timestamp >=this.counter  && !this.running){
+				this.start();
+			}
+			//console.log('tick',this.id,this.duration ,this.counter - timestamp,this.stagger && this.stagger.delay*100)
       if (this.counter >= 0 && this.duration * 1000 + this.counter - timestamp <= 0 && !this.completed) {
         this.complete();
       }
@@ -175,7 +192,7 @@ var Schwifty = (function() {
 	const cleanUpOnComplete = (className, vars, interruptedValues) => {
 		const {fixedValuesToRemove,fixValues} = cleanUpOnCompletePrepare(className, vars, interruptedValues);
 		let allStyleData = `${styleEl.innerHTML}`;
-		console.log('cleanUpOnComplete',fixedValuesToRemove,fixValues);
+		//console.log('cleanUpOnComplete',fixedValuesToRemove,fixValues);
 		allStyleData = allStyleData.split(fixedValuesToRemove).join('');
 		allStyleData += fixValues;
 		styleEl.innerHTML = allStyleData;
@@ -186,9 +203,9 @@ var Schwifty = (function() {
     if (interruptedValues) {
       animationVars = crossReferenceWithExpectedVars(animationVars, interruptedValues)
     }
-    console.log('animationVars',animationVars);
+    //console.log('animationVars',animationVars);
     if (fixedParamsStorage[className]) {
-			console.log('cleanUpOnComplete fixedParamsStorage')
+			//console.log('cleanUpOnComplete fixedParamsStorage')
       vars = Object.assign({}, fixedParamsStorage[className].vars, animationVars, vars.original ? {
         original: getAnimationVars(vars.original)
       } : null);
@@ -212,7 +229,7 @@ var Schwifty = (function() {
       selector = OptimalSelect.select(elem);
     }
     if (!selector) {
-      const existingClass = elem.className.split(" ").find(cls => cls.indexOf('schwifty-') >= 0);
+      const existingClass = elem.className.split(' ').find(cls => cls.indexOf('schwifty-') >= 0);
       //to do cleanUpOnComplete
       selector = `.${existingClass}`
     }
@@ -225,7 +242,11 @@ var Schwifty = (function() {
     let i = previousLength
     while (i--) {
       const an = animations[i];
-      an.tick(timestamp)
+      an.tick(timestamp);
+			if (an.completed) {
+				console.log('completed');
+				animRemoveCallback(an)
+			}
       if (!an.completed && an.running && an.onUpdate) {
         an.onUpdate(an, timestamp - an.counter);
       }
@@ -255,17 +276,19 @@ var Schwifty = (function() {
     }
   }
   const fromTo = (elem, duration, fromVars, toVars, callback, stagger) => {
-    const runningAnim = animations.find(anim => anim.elem === elem);
-    if (runningAnim) {
-      runningAnim.stop();
-    }
+    
     const anim = create()
     //TODO: test performance 
-    const existingClass = elem.className.split(" ").find(cls => cls.indexOf('schwifty-') >= 0)
+    const existingClass = elem.className.split(' ').find(cls => cls.indexOf('schwifty-') >= 0)
     const id = existingClass || (stagger && !stagger.splitValues && callback ? stagger.id : getId())
     //console.log('toVars', toVars)
     const resp = (id, selector) => {
       addToBody()
+			//
+			const runningAnim = animations.find(anim => anim.id === id);
+    	if (runningAnim) {
+      	runningAnim.stop();
+    	}
       //console.log('staggerId',id,stagger.id,selector)
       //TODO: check for existing animation id
       animations.push(anim)
@@ -281,7 +304,7 @@ var Schwifty = (function() {
       }
       //console.log('names', toVars);
       anim.init(elem, duration, fromVars, toVars, id, selector, stagger, animRemoveCallback);
-      console.log('names', id, selector);
+      //console.log('names', id, selector);
       anim.storeCSS(createSheet(elem, duration, fromVars, toVars, animName, className, stagger));
     }
     if (callback && typeof callback === 'function') {
@@ -296,6 +319,7 @@ var Schwifty = (function() {
   }
   const animRemoveCallback = (an) => {
     const previousLength = animations.length;
+		//console.log('animRemoveCallback',previousLength);
     animations.splice(animations.indexOf(an), 1);
     const currentLength = animations.length;
     if (previousLength > 0 && currentLength === 0) {
@@ -353,6 +377,7 @@ var Schwifty = (function() {
         id: splitValues ? getId() : id,
         index,
         total,
+				delay: startDelay + index * stagger,
         splitValues,
 				unifiedId: id
       })
@@ -514,9 +539,10 @@ var Schwifty = (function() {
       toVars = Object.assign({}, prevValues.vars, toVars)
     }
     const specialEase = specialEasings.find(ease => ease === toVars.ease);
+		const delay = (fromVars && fromVars.delay) || (toVars && toVars.delay) || 0;
     const cssText = {
       keyframes: buildKeyFrames(elem, fromVars, toVars, animationName, className),
-      elementStyle: `${className}{animation: ${animationName} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':( toVars.ease || 'linear')} ${toVars.delay || 0}s;}`
+      elementStyle: `${className}{animation: ${animationName} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':( toVars.ease || 'linear')} ${delay}s;}`
     };
 		//TODO: prevent duplicate!!!
     //if (styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
@@ -526,11 +552,11 @@ var Schwifty = (function() {
 		}else if(stagger && stagger.index <= stagger.total-1 ){
 			const id = stagger.splitValues ? stagger.unifiedId : stagger.id;
 		
-			if(typeof staggerCreate[id] == "undefined"){
+			if(typeof staggerCreate[id] == 'undefined'){
 				staggerCreate[id] = {keyframes:[],elementStyle:[]}
 			}
 			//handle multiple values
-			console.log('createSheet', animationName, className, id, staggerCreate[id])
+			//console.log('createSheet', animationName, className, id, staggerCreate[id])
 
 			//inserts doubles
 			if(!staggerCreate[id].keyframes.some(key=>key === cssText.keyframes)){
@@ -540,7 +566,7 @@ var Schwifty = (function() {
 			if(stagger.index === stagger.total-1){
 				let allStyleData = staggerCreate[id].elementStyle.reduce((acc, style) => `${acc}${style}` ,styleEl.innerHTML);
 				allStyleData = staggerCreate[id].keyframes.reduce((acc, key) => `${acc}${key}`, allStyleData);
-				console.log('createSheet stagger', allStyleData)
+				//console.log('createSheet stagger', allStyleData)
 				styleEl.innerHTML = allStyleData;
 				delete staggerCreate[id]
 			}
@@ -561,41 +587,41 @@ var Schwifty = (function() {
     let string = '';
     let translateString = '';
     if (propertyCheck(vars.x)) {
-      translateString += ` translateX(${numberCheck(vars.x) ? `${vars.x}px` : vars.x})`;
+      translateString = `${translateString} translateX(${numberCheck(vars.x) ? `${vars.x}px` : vars.x})`;
     }
     if (propertyCheck(vars.y)) {
-      translateString += ` translateY(${numberCheck(vars.y) ? `${vars.y}px` : vars.y})`;
+      translateString = `${translateString} translateY(${numberCheck(vars.y) ? `${vars.y}px` : vars.y})`;
     }
     if (propertyCheck(vars.scale)) {
-      translateString += ` scale(${vars.scale})`;
+      translateString = `${translateString} scale(${vars.scale})`;
     }
     if (propertyCheck(vars.rotate)) {
-      translateString += ` rotate(${vars.rotate}deg)`;
+      translateString = `${translateString} rotate(${vars.rotate}deg)`;
     }
     if (propertyCheck(vars.opacity)) {
-      string += ` opacity:${vars.opacity} ${importantDeclaration(vars.important,'opacity',fix)};`;
+      string = `${string} opacity:${vars.opacity} ${importantDeclaration(vars.important,'opacity',fix)};`;
     }
 		if (propertyCheck(vars.color)) {
-      string += ` color:${vars.color} ${importantDeclaration(vars.important,'color',fix)};`;
+      string = `${string} color:${vars.color} ${importantDeclaration(vars.important,'color',fix)};`;
     }
 		if (propertyCheck(vars.backgroundColor)) {
-      string += ` background-color:${vars.backgroundColor} ${importantDeclaration(vars.important,'backgroundColor',fix)};`;
+      string = `${string} background-color:${vars.backgroundColor} ${importantDeclaration(vars.important,'backgroundColor',fix)};`;
     }
 				
     if (propertyCheck(vars.width)) {
-      string += ` width:${numberCheck(vars.width) ? `${vars.width}px` : vars.width} ${importantDeclaration(vars.important,'width',fix)};`;
+      string = `${string} width:${numberCheck(vars.width) ? `${vars.width}px` : vars.width} ${importantDeclaration(vars.important,'width',fix)};`;
     }
     if (propertyCheck(vars.height)) {
-      string += ` height:${numberCheck(vars.height) ? `${vars.height}px` : vars.height} ${importantDeclaration(vars.important,'height',fix)};`;
+      string = `${string} height:${numberCheck(vars.height) ? `${vars.height}px` : vars.height} ${importantDeclaration(vars.important,'height',fix)};`;
     }
 		if (propertyCheck(vars.left)) {
-      string += ` left:${numberCheck(vars.left) ? `${vars.left}px` : vars.left} ${importantDeclaration(vars.important,'left',fix)};`;
+      string = `${string} left:${numberCheck(vars.left) ? `${vars.left}px` : vars.left} ${importantDeclaration(vars.important,'left',fix)};`;
     }
 		if (propertyCheck(vars.top)) {
-      string += ` top:${numberCheck(vars.top) ? `${vars.top}px` : vars.top} ${importantDeclaration(vars.important,'top',fix)};`;
+      string = `${string} top:${numberCheck(vars.top) ? `${vars.top}px` : vars.top} ${importantDeclaration(vars.important,'top',fix)};`;
     }
     if (propertyCheck(vars.transformOrigin)) {
-      string += ` transform-origin:${vars.transformOrigin};`
+      string = `${string} transform-origin:${vars.transformOrigin};`
     }
     if (translateString) {
       string = `${string} transform:${translateString} ${importantDeclaration(vars.important,'transform',fix)};`
