@@ -6,8 +6,7 @@
   <script type="text/javascript" src="https://rawgithub.com/Autarc/optimal-select/master/dist/optimal-select.min.js"></script>
   <script type="text/javascript" src="https://rawgithub.com/mrdoob/stats.js/master/build/stats.min.js"></script>
   <script>
-    
-    'use strict';
+'use strict';
 var Schwifty = (function() {
   let animations = [];
   const fixedParams = {};
@@ -21,6 +20,8 @@ var Schwifty = (function() {
   let styleEl = document.createElement('style');
   styleEl.setAttribute('id', 'schwifty-library');
   document.head.appendChild(styleEl);
+	const staggerCreate = {};
+	const staggerRemove = {};
   // Grab style sheet
   const Fleeb = {
     init(elem, duration, fromVars, toVars, id, selector, stagger, removeCallback) {
@@ -48,6 +49,7 @@ var Schwifty = (function() {
       this.cssText = text
     },
     prepareElement(el, id) {
+			return;
       if (!el.classList.contains(id) && !this.selector) {
         el.classList.add(id)
       }
@@ -118,19 +120,30 @@ var Schwifty = (function() {
     return tempProps
   }
   const removeCompleted = an => {
-    return;
-    const interruptedValues = an.interrupted && an.elem && getInterruptedValues(an.elem);
-    styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.elementStyle).join('');
+		//console.log('removeCompleted', staggerRemove,an.stagger)
+		return null;
+		if(!an.stagger){
+    	styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.elementStyle).join('');
+		}
     if (an.stagger) {
+			//remove element style
+			if(typeof staggerRemove[an.stagger.id] === 'undefined'){
+				staggerRemove[an.stagger.id] = '';
+			}
+			staggerRemove[an.stagger.id] = `${staggerRemove[an.stagger.id]}${an.cssText.elementStyle}`;
+			
+			//remove animation keyframe
       if (an.stagger.splitValues) {
         styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
       } else if (an.stagger.index === an.stagger.total - 1) {
         styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
       }
+			
     } else {
       styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
     }
-    if (an.toVars && an.toVars.fix === 'style') {
+    if (!an.stagger && an.toVars && an.toVars.fix === 'style') {
+  	  const interruptedValues = an.interrupted && an.elem && getInterruptedValues(an.elem);
       cleanUpOnComplete(an.selector ? an.selector : `.${an.id}`, an.toVars, interruptedValues)
     }
   }
@@ -153,6 +166,7 @@ var Schwifty = (function() {
     }
     //console.log('animationVars', animationVars, fixedParams[className])
     if (fixedParams[className]) {
+			//console.log('cleanUpOnComplete fixedParams')
       vars = Object.assign({}, fixedParams[className].vars, animationVars, vars.original ? {
         original: getAnimationVars(vars.original)
       } : null);
@@ -219,10 +233,12 @@ var Schwifty = (function() {
     }
   }
   const fromTo = (elem, duration, fromVars, toVars, callback, stagger) => {
+		/*
     const runningAnim = animations.find(anim => anim.elem === elem);
     if (runningAnim) {
       runningAnim.stop();
     }
+		*/
     const anim = create()
     //TODO: test performance 
     const existingClass = elem.className.split(" ").find(cls => cls.indexOf('schwifty-') >= 0)
@@ -246,7 +262,7 @@ var Schwifty = (function() {
       //console.log('names', toVars);
       anim.init(elem, duration, fromVars, toVars, id, selector, stagger, animRemoveCallback);
       //console.log('names', id, selector);
-      anim.storeCSS(createSheet(elem, duration, fromVars, toVars, animName, className));
+      anim.storeCSS(createSheet(elem, duration, fromVars, toVars, animName, className, stagger));
     }
     if (callback && typeof callback === 'function') {
       callback(id, resp)
@@ -470,8 +486,8 @@ var Schwifty = (function() {
     }
     return arr;
   };
-  const createSheet = (elem, duration, fromVars, toVars, animationName, className) => {
-    //console.log('names', animationName, className)
+  const createSheet = (elem, duration, fromVars, toVars, animationName, className, stagger) => {
+    //console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate,staggerCreate[stagger.id])
     const prevValues = fixedParams[className]
     if (prevValues) {
       toVars = Object.assign({}, prevValues.vars, toVars)
@@ -481,10 +497,30 @@ var Schwifty = (function() {
       keyframes: buildKeyFrames(elem, fromVars, toVars, animationName, className),
       elementStyle: `${className}{animation: ${animationName} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':( toVars.ease || 'linear')} ${toVars.delay || 0}s;}`
     };
-    if (styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
-      styleEl.innerHTML += cssText.keyframes;
-    }
-    styleEl.innerHTML += cssText.elementStyle;
+		//TODO: prevent duplicate!!!
+    //if (styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
+		if(!stagger){
+			//console.log('createSheet', cssText)
+      styleEl.innerHTML = `${styleEl.innerHTML}${cssText.keyframes}${cssText.elementStyle}`;
+		}else if(stagger && stagger.index <= stagger.total-1 ){
+			if(typeof staggerCreate[stagger.id] == "undefined"){
+				staggerCreate[stagger.id] = {keyframes:[],elementStyle:[]}
+			}
+			//inserts doubles
+			if(!staggerCreate[stagger.id].keyframes.some(key=>key === cssText.keyframes)){
+				staggerCreate[stagger.id].keyframes.push(cssText.keyframes)
+			}
+			staggerCreate[stagger.id].elementStyle.push(cssText.elementStyle)
+			if(stagger.index === stagger.total-1){
+				let allStyleData = staggerCreate[stagger.id].elementStyle.reduce((acc, style) => `${acc}${style}` ,styleEl.innerHTML);
+				allStyleData = staggerCreate[stagger.id].keyframes.reduce((acc, key) => `${acc}${key}`, allStyleData);
+				//console.log('createSheet stagger', allStyleData)
+				styleEl.innerHTML = allStyleData;
+				delete staggerCreate[stagger.id]
+			}
+		}
+    //}
+    //styleEl.innerHTML += cssText.elementStyle;
     //console.log(cssText)
     return cssText;
   }
@@ -679,9 +715,9 @@ var Schwifty = (function() {
     }
     requestAnimationFrame( animate );
     //
-    const row =80;
+    const row = 80;
     var aaa = document.querySelector('main');
-    const elements = [...Array(1000).keys()].map(i => {
+    const elements = [...Array(3000).keys()].map(i => {
        const element = document.createElement('div');
       element.classList.add(`schwifty-mine-${i}`)
       element.classList.add('stl');
@@ -693,7 +729,7 @@ var Schwifty = (function() {
    
     
     document.querySelector('.btn1').addEventListener('click', () => {
-      Schwifty.staggerTo(elements, 0.6, {
+      Schwifty.staggerTo(elements, 10, {
         x: 50,
         y: 60,
         rotate: 45,
@@ -702,7 +738,7 @@ var Schwifty = (function() {
         },
         ease: 'cubic-bezier(0.42, 0, 0.58, 1)',
         fix: 'style'
-      }, null, 0.05);
+      }, null, 0.01);
     });
   </script>
 </body>

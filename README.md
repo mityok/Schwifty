@@ -13,6 +13,8 @@
   10. add support for calc value
   11. flatten floating point values
   12. optimize elastic resampling for stagger
+  13. stop stagger
+  14. on stagger with simillar values create joined class rule 
   
   performance:
   
