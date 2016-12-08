@@ -35,7 +35,52 @@ var Schwifty = (function() {
       this.running = false;
       this.removeHizzardsCallback = removeHizzardsCallback;
 			this.counter = performance.now() + this.delay * 1000;
-		}
+		},
+		storeCSS(css) {
+			console.log('css',css);
+      this.cssText = css;
+    },
+    prepareElement(el, id, stagger) {
+			//console.log(this.selector)
+      if (this.selector && this.selector === 'provide' && !el.classList.contains(id)) {
+        el.classList.add(id)
+      }
+			//if(!stagger || (stagger && stagger.index === stagger.total - 1)){
+      	//el.addEventListener('animationstart', this.animationStart, false);
+      	//el.addEventListener('animationend', this.animationEnd, false);
+			//}
+    },
+		start(){
+			//console.log('start')
+			 this.running = true;
+       //this.counter = performance.now()
+		},
+   
+    complete() {
+      if (!this.completed) {
+        this.completed = true;
+        this.running = false;
+        if (typeof this.onComplete === 'function' ) {
+          this.onComplete(this)
+        }
+        this.removeHizzardsCallback(this);
+      }
+    },
+    stop(fire) {
+      //should fire event or not
+      //console.log('stop', this.elem)
+      this.interrupted = true;
+      this.complete()
+    },
+    tick(timestamp) {
+			if(timestamp >= this.counter  && !this.running){
+				this.start();
+			}
+			//console.log('tick',this.id,this.duration ,this.counter - timestamp,this.stagger && this.stagger.delay*100)
+      if (this.counter >= 0 && this.duration * 1000 + this.counter - timestamp <= 0 && !this.completed) {
+        this.complete();
+      }
+    }
 	}
 	
   // Grab style sheet
@@ -61,7 +106,7 @@ var Schwifty = (function() {
       this.animationEnd = this.animationEnd.bind(this);
       this.removeCallback = removeCallback;
       this.prepareElement(elem, this.id, stagger);
-			this.counter = performance.now() + ((this.stagger && this.stagger.delay) || this.delay ||0) *1000;
+			this.counter = performance.now() + ((this.stagger && this.stagger.delay) || this.delay || 0) *1000;
     },
     storeCSS(text) {
       this.cssText = text
@@ -307,20 +352,9 @@ var Schwifty = (function() {
     const id = existingClass || (stagger && !stagger.splitValues && callback ? stagger.id : getId())
     //console.log('toVars', toVars)
     const resp = (id, selector) => {
-      addToBody()
-			//
-			const runningAnim = animations.find(anim => anim.id === id);
-    	if (runningAnim) {
-      	runningAnim.stop();
-    	}
-      //console.log('staggerId',id,stagger.id,selector)
-      //TODO: check for existing animation id
-      animations.push(anim)
-      if (requestAnimationId === -1) {
-        requestAnimationId = window.requestAnimationFrame(step)
-      }
+      addNewAnimation(id, anim)
       const className = selector ? selector : `.${id}`;
-      const animName = (stagger && stagger.id) || getId() || selector;
+      const animName = getId() || selector;
       if (toVars.immediateRender && !specialEasings.some(ease => ease === toVars.ease)) {
         toVars = Object.assign({}, toVars, resampleDomValues(elem, className, toVars), {
           original: toVars
@@ -341,6 +375,20 @@ var Schwifty = (function() {
     }
     return anim;
   }
+	const addNewAnimation = (id, anim) => {
+		addToBody()
+			//
+		const runningAnim = animations.find(anim => anim.id === id);
+		if (runningAnim) {
+			runningAnim.stop();
+		}
+		//console.log('staggerId',id,stagger.id,selector)
+		//TODO: check for existing animation id
+		animations.push(anim)
+		if (requestAnimationId === -1) {
+			requestAnimationId = window.requestAnimationFrame(step)
+		}
+	}
   const animRemoveCallback = (an) => {
     const previousLength = animations.length;
 		//console.log('animRemoveCallback',previousLength);
@@ -368,14 +416,26 @@ var Schwifty = (function() {
   }
   const staggerFromTo = (elements, duration, fromVars, toVars, callback, stagger) => {
     //TODO: propper join and reuse animations
+		elements = Array.isArray(elements)?elements:[...elements];
     const id = getId();
-    const startDelay = (toVars && toVars.delay) || (fromVars && fromVars.delay) || 0;
+    
     const splitValues = (toVars && animationTypes.some(type => Array.isArray(toVars[type]))) || (fromVars && animationTypes.some(type => Array.isArray(fromVars[type])))
     const total = elements.length;
-    const splitToVarsTypes = toVars && animationTypes.filter(type => Array.isArray(toVars[type]))
-    const splitFromVarsTypes = fromVars && animationTypes.filter(type => Array.isArray(fromVars[type]))
-    //TODO: add better type modification for array values
-    //TODO: out of bound check for array values
+   //if split values then create ids for each animation
+		console.log('staggerFromTo',total,toVars,fromVars)
+		 const hazzards = createMulti();
+		//
+		const existingClasses = elements.map(elem =>  elem.className.split(' ').find(cls => cls.indexOf('schwifty-') >= 0));
+    
+		//
+      const animName = splitValues?[...Array(elements.length).keys()].map(i=>getId()):getId();
+      
+      //console.log('names', toVars);
+      hazzards.init(elements, duration, fromVars, toVars, id, stagger ,animRemoveCallback);
+      //console.log('names', id, selector);
+      hazzards.storeCSS(createHazzardsSheet(elements, duration, fromVars, toVars, animName, existingClasses, stagger, splitValues));
+		
+		/*
     return [...elements].map((elem, index) => {
       let toVarsTemp = null
       if (toVars) {
@@ -406,9 +466,94 @@ var Schwifty = (function() {
 				unifiedId: id
       })
     })
+		*/
   }
+	const splitVarsForHazzards = ( vars, index, stagger, startDelay)=>{
+		const splitIntoVarsTypes = vars && animationTypes.filter(type => Array.isArray(vars[type]))
+		let _varsTemp = null;
+      if (vars) {
+        const objTo = splitIntoVarsTypes.reduce((a, b) => {
+          a[b] = vars[b][index];
+          return a;
+        }, {});
+        _varsTemp = Object.assign({}, vars, {
+          delay: startDelay + index * stagger
+        }, objTo);
+      }
+		return _varsTemp;
+	}
+	const createHazzardsSheet = (elements, duration, fromVars, toVars, animationNames, existingClasses, stagger, splitValues) => {
+		console.log(animationNames,existingClasses)
+		const startDelay = getPropertyFromTo('delay',toVars,fromVars,0);
+		const specialEase = specialEasings.find(ease => ease === toVars.ease);
+		// console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate,staggerCreate[stagger.id])
+		let keyframes = null;
+		const css = elements.map((elem, index) => {
+			const _toVars = splitVarsForHazzards(toVars, index, stagger, startDelay);
+			const _fromVars = splitVarsForHazzards(fromVars, index, stagger, startDelay);
+			keyframes =  (keyframes && !splitValues) ? keyframes : buildKeyFrames(elem, _fromVars, _toVars, splitValues ? animationNames[index]:animationNames, existingClasses[index]);
+			return {
+      	keyframes,
+      	elementStyle: `.${existingClasses[index]}{animation: ${splitValues?animationNames[index]:animationNames} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':getPropertyFromTo('ease',toVars,fromVars,'linear')} ${getPropertyFromTo('delay',_toVars,_fromVars,0)}s;}`
+   		 };
+		});
+		styleEl.innerHTML = css.reduce((acc, {keyframes,elementStyle}) => { 
+			const key = acc.indexOf(keyframes)<0?keyframes:'';
+			return `${acc}${elementStyle}${key}`;
+		} ,`${styleEl.innerHTML}`);
+				//console.log('createSheet stagger', allStyleData)
+		return css;
+		/*
+		
+		/////////////////////////////////////
+    const prevValues = fixedParamsStorage[className]
+    if (prevValues) {
+      toVars = Object.assign({}, prevValues.vars, toVars)
+    }
+    const specialEase = specialEasings.find(ease => ease === toVars.ease);
+		const delay = (fromVars && fromVars.delay) || (toVars && toVars.delay) || 0;
+    const cssText = {
+      keyframes: buildKeyFrames(elem, fromVars, toVars, animationName, className),
+      elementStyle: `${className}{animation: ${animationName} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':( toVars.ease || 'linear')} ${delay}s;}`
+    };
+		//TODO: prevent duplicate!!!
+    //if (styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
+		if(!stagger){
+			//console.log('createSheet', cssText)
+      styleEl.innerHTML = `${styleEl.innerHTML}${cssText.keyframes}${cssText.elementStyle}`;
+		}else if(stagger && stagger.index <= stagger.total-1 ){
+			const id = stagger.splitValues ? stagger.unifiedId : stagger.id;
+		
+			if(typeof staggerCreate[id] == 'undefined'){
+				staggerCreate[id] = {keyframes:[],elementStyle:[]}
+			}
+			//handle multiple values
+			//console.log('createSheet', animationName, className, id, staggerCreate[id])
+
+			//inserts doubles
+			if(!staggerCreate[id].keyframes.some(key=>key === cssText.keyframes)){
+				staggerCreate[id].keyframes.push(cssText.keyframes)
+			}
+			staggerCreate[id].elementStyle.push(cssText.elementStyle)
+			if(stagger.index === stagger.total-1){
+				let allStyleData = staggerCreate[id].elementStyle.reduce((acc, style) => `${acc}${style}` ,styleEl.innerHTML);
+				allStyleData = staggerCreate[id].keyframes.reduce((acc, key) => `${acc}${key}`, allStyleData);
+				//console.log('createSheet stagger', allStyleData)
+				styleEl.innerHTML = allStyleData;
+				delete staggerCreate[id]
+			}
+		}
+    //}
+    //styleEl.innerHTML += cssText.elementStyle;
+    //console.log(cssText)
+    return cssText;
+		*/
+	}
   const create = () => {
     return Object.create(Fleeb)
+  }
+	const createMulti = () => {
+    return Object.create(Hizzards)
   }
   const killAll = () => {
     window.cancelAnimationFrame(requestAnimationId);
@@ -450,7 +595,7 @@ var Schwifty = (function() {
           }
         } else {
           const notEqual = (unitTo[1] !== '' && unitFrom[1] !== '') ? 'both' : (unitTo[1] !== '' ? 'to' : 'from');
-          notEqualVars = calulateVarsToRecheck(notEqualVars, notEqual)
+          notEqualVars = calculateVarsToRecheck(notEqualVars, notEqual)
           acc[key] = {
             unitFrom,
             unitTo,
@@ -468,7 +613,7 @@ var Schwifty = (function() {
       notEqualVars
     }
   }
-  const calulateVarsToRecheck = (notEqualVars, notEqual) => {
+  const calculateVarsToRecheck = (notEqualVars, notEqual) => {
     if (!notEqualVars) {
       return notEqual;
     } else if (notEqualVars === 'both' || notEqual === 'both' || (notEqualVars === 'from' && notEqual === 'to') || (notEqualVars === 'to' && notEqual === 'from')) {
