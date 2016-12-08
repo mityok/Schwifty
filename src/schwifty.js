@@ -14,6 +14,30 @@ var Schwifty = (function() {
   document.head.appendChild(styleEl);
 	const staggerCreate = {};
 	const staggerRemove = {};
+	const getPropertyFromTo = (property, toVars, fromVars, fallBack) =>{
+		return (fromVars && fromVars[property]) || (toVars && toVars[property]) || fallBack;
+	}
+	const Hizzards = {
+		init(elems, duration, fromVars, toVars, id, stagger,removeHizzardsCallback){
+			this.elems = elems;
+			this.duration = duration;
+      this.fromVars = fromVars;
+      this.toVars = toVars;
+      this.stagger = stagger;
+      this.onComplete = getPropertyFromTo('onComplete',toVars, fromVars, null);
+      this.onUpdate = getPropertyFromTo('onUpdate',toVars, fromVars, null);
+      this.onStart = getPropertyFromTo('onStart',toVars, fromVars, null);
+			this.delay = getPropertyFromTo('delay',toVars,fromVars ,0);
+      this.id = id;
+      this.counter = -1;
+      this.completed = false;
+      this.interrupted = false;
+      this.running = false;
+      this.removeHizzardsCallback = removeHizzardsCallback;
+			this.counter = performance.now() + this.delay * 1000;
+		}
+	}
+	
   // Grab style sheet
   const Fleeb = {
     init(elem, duration, fromVars, toVars, id, selector, stagger, removeCallback) {
