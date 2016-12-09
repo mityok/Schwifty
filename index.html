@@ -111,7 +111,8 @@
           console.log('comp')
         },
         ease: 'cubic-bezier(0.42, 0, 0.58, 1)',
-        fix: 'style'
+        fix: 'style',
+        delay:1,
       }, null, 0.3);
     });
     //Multi-value stagger:
@@ -120,6 +121,7 @@
       Schwifty.staggerTo(ccc, 1, {
         x: ['50%', 10, '10em'],
         y: [20, 40, 60],
+        backgroundColor:['red','green','blue'],
         important: ['transform'],
         onComplete: (an) => {
           console.log('comp 3')

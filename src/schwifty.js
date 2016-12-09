@@ -1,6 +1,6 @@
-'use strict';
+"use strict";
 var Schwifty = (function() {
-  let animations = [];
+let animations = [];
   const fixedParamsStorage = {};
   const animationTypes = ['opacity', 'x', 'y', 'scale', 'skew', 'rotate', 'width', 'height', 'backgroundColor', 'color', 'top', 'left', 'bottom', 'right']
   const cssProperties = ['transform', 'opacity', 'width', 'height', 'backgroundColor', 'color', 'top', 'left', 'bottom', 'right'];
@@ -12,18 +12,18 @@ var Schwifty = (function() {
   let styleEl = document.createElement('style');
   styleEl.setAttribute('id', 'schwifty-library');
   document.head.appendChild(styleEl);
-	const staggerCreate = {};
+  const staggerCreate = {};
 	const staggerRemove = {};
-	const getPropertyFromTo = (property, toVars, fromVars, fallBack) =>{
-		return (fromVars && fromVars[property]) || (toVars && toVars[property]) || fallBack;
-	}
-	const Hizzards = {
-		init(elems, duration, fromVars, toVars, id, stagger,removeHizzardsCallback){
+  const Hizzards = {
+		init(elems, duration, fromVars, toVars, id, stagger, splitValues, classNames, removeCallback){
 			this.elems = elems;
+      this.length = elems.length;
 			this.duration = duration;
       this.fromVars = fromVars;
       this.toVars = toVars;
       this.stagger = stagger;
+      this.splitValues = splitValues;
+      this.classNames = classNames;
       this.onComplete = getPropertyFromTo('onComplete',toVars, fromVars, null);
       this.onUpdate = getPropertyFromTo('onUpdate',toVars, fromVars, null);
       this.onStart = getPropertyFromTo('onStart',toVars, fromVars, null);
@@ -33,11 +33,12 @@ var Schwifty = (function() {
       this.completed = false;
       this.interrupted = false;
       this.running = false;
-      this.removeHizzardsCallback = removeHizzardsCallback;
+      this.removeCallback = removeCallback;
 			this.counter = performance.now() + this.delay * 1000;
+      console.log(this.stagger)
 		},
 		storeCSS(css) {
-			console.log('css',css);
+			//console.log('css',css);
       this.cssText = css;
     },
     prepareElement(el, id, stagger) {
@@ -45,10 +46,6 @@ var Schwifty = (function() {
       if (this.selector && this.selector === 'provide' && !el.classList.contains(id)) {
         el.classList.add(id)
       }
-			//if(!stagger || (stagger && stagger.index === stagger.total - 1)){
-      	//el.addEventListener('animationstart', this.animationStart, false);
-      	//el.addEventListener('animationend', this.animationEnd, false);
-			//}
     },
 		start(){
 			//console.log('start')
@@ -63,7 +60,7 @@ var Schwifty = (function() {
         if (typeof this.onComplete === 'function' ) {
           this.onComplete(this)
         }
-        this.removeHizzardsCallback(this);
+        this.removeCallback(this);
       }
     },
     stop(fire) {
@@ -77,7 +74,7 @@ var Schwifty = (function() {
 				this.start();
 			}
 			//console.log('tick',this.id,this.duration ,this.counter - timestamp,this.stagger && this.stagger.delay*100)
-      if (this.counter >= 0 && this.duration * 1000 + this.counter - timestamp <= 0 && !this.completed) {
+      if (this.counter >= 0 && (this.duration + this.length * this.stagger) *1000 + this.counter - timestamp <= 0 && !this.completed) {
         this.complete();
       }
     }
@@ -181,6 +178,9 @@ var Schwifty = (function() {
       }
     }
   };
+	const getPropertyFromTo = (property, toVars, fromVars, fallBack) =>{
+		return (fromVars && fromVars[property]) || (toVars && toVars[property]) || fallBack;
+	}
   const getInterruptedValues = elem => {
     //console.log('getComputedStyle')
     const stl = window.getComputedStyle(elem);
@@ -196,56 +196,61 @@ var Schwifty = (function() {
     }, initValue)
     return tempProps
   }
+  const removeCompletedHazzards = hz => {
+    console.log('removeCompletedHazzards',hz.cssText);
+    let allStyleData = `${styleEl.innerHTML}`;
+    hz.cssText.forEach(({elementStyle,keyframes})=>{
+      allStyleData = allStyleData.split(elementStyle).join('').split(keyframes).join('');
+    });
+    if(hz.toVars && hz.toVars.fix === 'style') {
+        //without interuption values and selector
+       const vars = getAnimationVars(hz.toVars);
+       hz.classNames.map((className,i) => {
+
+        const {fixedValuesToRemove,fixValues} = cleanUpOnCompletePrepare(`.${className}`, hz.splitValues?splitVarsForHazzards(vars, i, 0, 0): vars, null);
+        allStyleData = allStyleData.split(fixedValuesToRemove).join('');
+        allStyleData += fixValues;
+      })
+    }
+		styleEl.innerHTML = allStyleData;
+    /*
+    const id = hz.stagger.splitValues ? hz.stagger.unifiedId : hz.stagger.id;
+    if(typeof staggerRemove[id] === 'undefined'){
+      staggerRemove[id] = {keyframes:[],elementStyle:[],toVars:[], ids:[]};
+    }
+    staggerRemove[id].elementStyle.push(hz.cssText.elementStyle);
+    staggerRemove[id].toVars.push(hz.toVars);
+    staggerRemove[id].ids.push(hz.id);
+    //TODO: interrup stagger could be more tricky, since some animations could already been finished
+
+    if(!staggerRemove[id].keyframes.some(key=>key === hz.cssText.keyframes)){
+      staggerRemove[id].keyframes.push(hz.cssText.keyframes);
+    }
+    if (hz.stagger.index === hz.stagger.total - 1) {
+      let allStyleData = `${styleEl.innerHTML}`;
+      staggerRemove[id].elementStyle.forEach( style => allStyleData = allStyleData.split(style).join(''));
+      staggerRemove[id].keyframes.forEach( key => allStyleData = allStyleData.split(key).join(''));
+      styleEl.innerHTML = allStyleData;
+      if(hz.toVars && hz.toVars.fix === 'style') {
+        //without interuption and selector
+        cleanUpStaggerOnComplete(staggerRemove[id].ids, staggerRemove[id].toVars)
+      }
+      delete staggerRemove[id]
+    }
+    */
+  }
   const removeCompleted = an => {
 		const interruptedValues =  an.interrupted && an.elem && getInterruptedValues(an.elem);
 		//console.log('removeCompleted', staggerRemove,an.stagger)
-		if(!an.stagger){
-    	styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.elementStyle).join('');
-		}
-    if (an.stagger) {
-			//remove element style
-			const id = an.stagger.splitValues ? an.stagger.unifiedId : an.stagger.id;
-			if(typeof staggerRemove[id] === 'undefined'){
-				staggerRemove[id] = {keyframes:[],elementStyle:[],toVars:[], ids:[],interruptedValues:[]};
-			}
-			staggerRemove[id].elementStyle.push(an.cssText.elementStyle);
-			staggerRemove[id].toVars.push(an.toVars);
-			staggerRemove[id].ids.push(an.id);
-			if(interruptedValues){
-				staggerRemove[id].interruptedValues.push(interruptedValues)
-			}
-			//TODO: interrup stagger could be more tricky, since some animations could already been finished
-			
-			if(!staggerRemove[id].keyframes.some(key=>key === an.cssText.keyframes)){
-				staggerRemove[id].keyframes.push(an.cssText.keyframes);
-			}
-			if (an.stagger.index === an.stagger.total - 1) {
-				let allStyleData = `${styleEl.innerHTML}`;
-				staggerRemove[id].elementStyle.forEach( style => allStyleData = allStyleData.split(style).join(''));
-				staggerRemove[id].keyframes.forEach( key => allStyleData = allStyleData.split(key).join(''));
-				styleEl.innerHTML = allStyleData;
-				if(an.toVars && an.toVars.fix === 'style') {
-					//without interuption and selector
-					cleanUpStaggerOnComplete(staggerRemove[id].ids, staggerRemove[id].toVars)
-				}
-				delete staggerRemove[id]
-			}
-    } else {
-      styleEl.innerHTML = styleEl.innerHTML.split(an.cssText.keyframes).join('');
-    }
-    if (!an.stagger && an.toVars && an.toVars.fix === 'style') {
+   
+    let allStyleData = `${styleEl.innerHTML}`;
+    allStyleData = allStyleData.split(an.cssText.elementStyle).join('').split(an.cssText.keyframes).join('');
+    styleEl.innerHTML = allStyleData;
+    if (an.toVars && an.toVars.fix === 'style') {
       cleanUpOnComplete(an.selector ? an.selector : `.${an.id}`, an.toVars, interruptedValues)
     }
   }
-	const cleanUpStaggerOnComplete = (classNamesArray, varsArray) => {
-		let allStyleData = `${styleEl.innerHTML}`;
-    classNamesArray.map((className,i) => {
-			const {fixedValuesToRemove,fixValues} = cleanUpOnCompletePrepare(`.${className}`, varsArray[i], null);
-			allStyleData.split(fixedValuesToRemove).join('');
-			allStyleData += fixValues;
-		})
-		styleEl.innerHTML=allStyleData;
-  }
+	
 
   const crossReferenceWithExpectedVars = (animationVars, interruptedValues) => {
     const res = Object.keys(animationVars).reduce((acc, key) => {
@@ -312,10 +317,6 @@ var Schwifty = (function() {
     while (i--) {
       const an = animations[i];
       an.tick(timestamp);
-			if (an.completed) {
-				console.log('completed');
-				animRemoveCallback(an)
-			}
       if (!an.completed && an.running && an.onUpdate) {
         an.onUpdate(an, timestamp - an.counter);
       }
@@ -377,7 +378,7 @@ var Schwifty = (function() {
   }
 	const addNewAnimation = (id, anim) => {
 		addToBody()
-			//
+			//check for running animation on one of the stagger elements
 		const runningAnim = animations.find(anim => anim.id === id);
 		if (runningAnim) {
 			runningAnim.stop();
@@ -389,16 +390,24 @@ var Schwifty = (function() {
 			requestAnimationId = window.requestAnimationFrame(step)
 		}
 	}
-  const animRemoveCallback = (an) => {
-    const previousLength = animations.length;
-		//console.log('animRemoveCallback',previousLength);
+
+	const removeAnimation = (an) => {
+		const previousLength = animations.length;
+		console.log('animRemoveCallback',previousLength);
     animations.splice(animations.indexOf(an), 1);
     const currentLength = animations.length;
     if (previousLength > 0 && currentLength === 0) {
       killAll();
       removeFromBody();
     }
-    removeCompleted(an)
+	}
+  const hazzardsRemoveCallback = an => {
+		removeAnimation(an);
+    removeCompletedHazzards(an);
+	}
+  const animRemoveCallback = (an) => {
+    removeAnimation(an);
+    removeCompleted(an);
   }
   const to = (elem, duration, toVars, callback) => {
     //TODO: do build only when needed
@@ -428,12 +437,12 @@ var Schwifty = (function() {
 		const existingClasses = elements.map(elem =>  elem.className.split(' ').find(cls => cls.indexOf('schwifty-') >= 0));
     
 		//
-      const animName = splitValues?[...Array(elements.length).keys()].map(i=>getId()):getId();
-      
+    const animName = splitValues?[...Array(elements.length).keys()].map(i=>getId()):getId();
+    addNewAnimation(id,hazzards)
       //console.log('names', toVars);
-      hazzards.init(elements, duration, fromVars, toVars, id, stagger ,animRemoveCallback);
+    hazzards.init(elements, duration, fromVars, toVars, id, stagger, splitValues, existingClasses, hazzardsRemoveCallback);
       //console.log('names', id, selector);
-      hazzards.storeCSS(createHazzardsSheet(elements, duration, fromVars, toVars, animName, existingClasses, stagger, splitValues));
+    hazzards.storeCSS(createHazzardsSheet(elements, duration, fromVars, toVars, animName, existingClasses, stagger, splitValues));
 		
 		/*
     return [...elements].map((elem, index) => {
@@ -467,6 +476,7 @@ var Schwifty = (function() {
       })
     })
 		*/
+		return hazzards;
   }
 	const splitVarsForHazzards = ( vars, index, stagger, startDelay)=>{
 		const splitIntoVarsTypes = vars && animationTypes.filter(type => Array.isArray(vars[type]))
