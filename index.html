@@ -104,7 +104,7 @@
     //Basic stagger:
     var aaa = document.querySelectorAll('.aaa');
     document.querySelector('.btn1').addEventListener('click', () => {
-      Schwifty.staggerTo(aaa, 3, {
+      Schwifty.staggerTo(aaa, 2, {
         x: '50%',
         y: 60,
         onComplete: (an) => {
@@ -122,6 +122,7 @@
         x: ['50%', 10, '10em'],
         y: [20, 40, 60],
         backgroundColor:['red','green','blue'],
+        opacity:[0.8,0.2,0.5],
         important: ['transform'],
         onComplete: (an) => {
           console.log('comp 3')

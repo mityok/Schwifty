@@ -12,6 +12,7 @@ let animations = [];
   let styleEl = document.createElement('style');
   styleEl.setAttribute('id', 'schwifty-library');
   document.head.appendChild(styleEl);
+  let allStyleData = '';
   const staggerCreate = {};
 	const staggerRemove = {};
   const Hizzards = {
@@ -35,7 +36,6 @@ let animations = [];
       this.running = false;
       this.removeCallback = removeCallback;
 			this.counter = performance.now() + this.delay * 1000;
-      console.log(this.stagger)
 		},
 		storeCSS(css) {
 			//console.log('css',css);
@@ -134,12 +134,10 @@ let animations = [];
     },
     animationEnd(e) {
       if (e.animationName === (this.stagger && this.stagger.id) || this.id) {
-        //console.log('end')
         this.complete()
       }
     },
     complete() {
-			console.log('compl',this.completed);
       if (!this.completed) {
         this.completed = true;
         this.running = false;
@@ -196,12 +194,12 @@ let animations = [];
     }, initValue)
     return tempProps
   }
+  const setInnerHtml = (value) =>{
+    styleEl.innerHTML = value;
+  }
   const removeCompletedHazzards = hz => {
-    console.log('removeCompletedHazzards',hz.cssText);
-    let allStyleData = `${styleEl.innerHTML}`;
-    hz.cssText.forEach(({elementStyle,keyframes})=>{
-      allStyleData = allStyleData.split(elementStyle).join('').split(keyframes).join('');
-    });
+    //console.log('removeCompletedHazzards',hz.cssText);
+    allStyleData = allStyleData.split(hz.cssText.elementStyles.join('')).join('').split(hz.cssText.keyframes.join('')).join('');
     if(hz.toVars && hz.toVars.fix === 'style') {
         //without interuption values and selector
        const vars = getAnimationVars(hz.toVars);
@@ -212,7 +210,7 @@ let animations = [];
         allStyleData += fixValues;
       })
     }
-		styleEl.innerHTML = allStyleData;
+		setInnerHtml(allStyleData);
     /*
     const id = hz.stagger.splitValues ? hz.stagger.unifiedId : hz.stagger.id;
     if(typeof staggerRemove[id] === 'undefined'){
@@ -243,9 +241,8 @@ let animations = [];
 		const interruptedValues =  an.interrupted && an.elem && getInterruptedValues(an.elem);
 		//console.log('removeCompleted', staggerRemove,an.stagger)
    
-    let allStyleData = `${styleEl.innerHTML}`;
     allStyleData = allStyleData.split(an.cssText.elementStyle).join('').split(an.cssText.keyframes).join('');
-    styleEl.innerHTML = allStyleData;
+    setInnerHtml(allStyleData)
     if (an.toVars && an.toVars.fix === 'style') {
       cleanUpOnComplete(an.selector ? an.selector : `.${an.id}`, an.toVars, interruptedValues)
     }
@@ -265,11 +262,10 @@ let animations = [];
   }, {})
 	const cleanUpOnComplete = (className, vars, interruptedValues) => {
 		const {fixedValuesToRemove,fixValues} = cleanUpOnCompletePrepare(className, vars, interruptedValues);
-		let allStyleData = `${styleEl.innerHTML}`;
 		//console.log('cleanUpOnComplete',fixedValuesToRemove,fixValues);
 		allStyleData = allStyleData.split(fixedValuesToRemove).join('');
 		allStyleData += fixValues;
-		styleEl.innerHTML = allStyleData;
+    setInnerHtml(allStyleData);
 	}
   const cleanUpOnCompletePrepare = (className, vars, interruptedValues) => {
     let fixedValuesToRemove = null;
@@ -331,7 +327,8 @@ let animations = [];
   }
   const removeFromBody = () => {
     if (bodyData && bodyData.className) {
-      styleEl.innerHTML = styleEl.innerHTML.split(bodyData.className).join('');
+      allStyleData = allStyleData.split(bodyData.className).join('');
+      setInnerHtml(allStyleData);
     } else if (bodyData) {
       document.body.classList.remove('getting-schwifty');
     }
@@ -339,7 +336,8 @@ let animations = [];
   const addToBody = () => {
     if (animations.length === 0 && bodyData) {
       if (bodyData.className) {
-        styleEl.innerHTML += bodyData.className;
+        allStyleData += bodyData.className;
+        setInnerHtml(allStyleData);
       } else {
         document.body.classList.add('getting-schwifty');
       }
@@ -393,7 +391,7 @@ let animations = [];
 
 	const removeAnimation = (an) => {
 		const previousLength = animations.length;
-		console.log('animRemoveCallback',previousLength);
+		//console.log('animRemoveCallback',previousLength);
     animations.splice(animations.indexOf(an), 1);
     const currentLength = animations.length;
     if (previousLength > 0 && currentLength === 0) {
@@ -425,13 +423,13 @@ let animations = [];
   }
   const staggerFromTo = (elements, duration, fromVars, toVars, callback, stagger) => {
     //TODO: propper join and reuse animations
-		elements = Array.isArray(elements)?elements:[...elements];
+		elements = Array.isArray(elements) ? elements:[...elements];
     const id = getId();
     
     const splitValues = (toVars && animationTypes.some(type => Array.isArray(toVars[type]))) || (fromVars && animationTypes.some(type => Array.isArray(fromVars[type])))
     const total = elements.length;
    //if split values then create ids for each animation
-		console.log('staggerFromTo',total,toVars,fromVars)
+		//console.log('staggerFromTo',total,toVars,fromVars)
 		 const hazzards = createMulti();
 		//
 		const existingClasses = elements.map(elem =>  elem.className.split(' ').find(cls => cls.indexOf('schwifty-') >= 0));
@@ -479,38 +477,38 @@ let animations = [];
 		return hazzards;
   }
 	const splitVarsForHazzards = ( vars, index, stagger, startDelay)=>{
-		const splitIntoVarsTypes = vars && animationTypes.filter(type => Array.isArray(vars[type]))
+		const splitIntoVarsTypes = vars && animationTypes.filter(type => Array.isArray(vars[type]));
+    //console.log('splitIntoVarsTypes',splitIntoVarsTypes,vars,animationTypes);
 		let _varsTemp = null;
-      if (vars) {
-        const objTo = splitIntoVarsTypes.reduce((a, b) => {
-          a[b] = vars[b][index];
-          return a;
-        }, {});
-        _varsTemp = Object.assign({}, vars, {
-          delay: startDelay + index * stagger
-        }, objTo);
-      }
+    if (vars) {
+      const objTo = splitIntoVarsTypes.reduce((a, b) => {
+        a[b] = vars[b][index];
+        return a;
+      }, {});
+      _varsTemp = Object.assign({}, vars, {
+        delay: startDelay + index * stagger
+      }, objTo);
+    }
 		return _varsTemp;
 	}
 	const createHazzardsSheet = (elements, duration, fromVars, toVars, animationNames, existingClasses, stagger, splitValues) => {
-		console.log(animationNames,existingClasses)
+		//console.log(animationNames,existingClasses)
 		const startDelay = getPropertyFromTo('delay',toVars,fromVars,0);
 		const specialEase = specialEasings.find(ease => ease === toVars.ease);
 		// console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate,staggerCreate[stagger.id])
+    const css = {keyframes:[],elementStyles:[]}
+
 		let keyframes = null;
-		const css = elements.map((elem, index) => {
-			const _toVars = splitVarsForHazzards(toVars, index, stagger, startDelay);
-			const _fromVars = splitVarsForHazzards(fromVars, index, stagger, startDelay);
-			keyframes =  (keyframes && !splitValues) ? keyframes : buildKeyFrames(elem, _fromVars, _toVars, splitValues ? animationNames[index]:animationNames, existingClasses[index]);
-			return {
-      	keyframes,
-      	elementStyle: `.${existingClasses[index]}{animation: ${splitValues?animationNames[index]:animationNames} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':getPropertyFromTo('ease',toVars,fromVars,'linear')} ${getPropertyFromTo('delay',_toVars,_fromVars,0)}s;}`
-   		 };
+		elements.forEach((elem, index) => {
+      if(!splitValues && css.keyframes.length === 0){
+        css.keyframes[0] = buildKeyFrames(elem, fromVars, toVars, animationNames, existingClasses[0]);
+      }else if(splitValues){
+         css.keyframes[index] = buildKeyFrames(elem, splitVarsForHazzards(fromVars, index, stagger, startDelay),  splitVarsForHazzards(toVars, index, stagger, startDelay),  animationNames[index], existingClasses[index]);
+      }
+      css.elementStyles[index] = `.${existingClasses[index]}{animation: ${splitValues?animationNames[index]:animationNames} ${duration}s both ${specialEase === 'easeOutElastic'?'linear':getPropertyFromTo('ease',toVars,fromVars,'linear')} ${getPropertyFromTo('delay',toVars,fromVars,0) + index * stagger}s;}`;
 		});
-		styleEl.innerHTML = css.reduce((acc, {keyframes,elementStyle}) => { 
-			const key = acc.indexOf(keyframes)<0?keyframes:'';
-			return `${acc}${elementStyle}${key}`;
-		} ,`${styleEl.innerHTML}`);
+    allStyleData = `${css.keyframes.join('')}${css.elementStyles.join('')}${allStyleData}`;
+    setInnerHtml(allStyleData);
 				//console.log('createSheet stagger', allStyleData)
 		return css;
 		/*
@@ -688,13 +686,14 @@ let animations = [];
     let test = null;
     if (vars) {
       test = `${className}{${constructAnimation(vars, true)}}`;
-      styleEl.innerHTML += test;
+      allStyleData += test;
     }
     //not all units are equal need to resample the element
     const varsFixed = crossReferenceWithExpectedVars(getAnimationVars(vars || otherVars), getInterruptedValues(elem));
     if (test) {
-      styleEl.innerHTML = styleEl.innerHTML.split(test).join('');
+      allStyleData = allStyleData.split(test).join('');
     }
+    setInnerHtml(allStyleData);
     return varsFixed;
   }
   //https://gist.github.com/gre/1650294
@@ -725,31 +724,9 @@ let animations = [];
     };
 		//TODO: prevent duplicate!!!
     //if (styleEl.innerHTML.indexOf(cssText.keyframes) < 0) {
-		if(!stagger){
-			//console.log('createSheet', cssText)
-      styleEl.innerHTML = `${styleEl.innerHTML}${cssText.keyframes}${cssText.elementStyle}`;
-		}else if(stagger && stagger.index <= stagger.total-1 ){
-			const id = stagger.splitValues ? stagger.unifiedId : stagger.id;
-		
-			if(typeof staggerCreate[id] == 'undefined'){
-				staggerCreate[id] = {keyframes:[],elementStyle:[]}
-			}
-			//handle multiple values
-			//console.log('createSheet', animationName, className, id, staggerCreate[id])
 
-			//inserts doubles
-			if(!staggerCreate[id].keyframes.some(key=>key === cssText.keyframes)){
-				staggerCreate[id].keyframes.push(cssText.keyframes)
-			}
-			staggerCreate[id].elementStyle.push(cssText.elementStyle)
-			if(stagger.index === stagger.total-1){
-				let allStyleData = staggerCreate[id].elementStyle.reduce((acc, style) => `${acc}${style}` ,styleEl.innerHTML);
-				allStyleData = staggerCreate[id].keyframes.reduce((acc, key) => `${acc}${key}`, allStyleData);
-				//console.log('createSheet stagger', allStyleData)
-				styleEl.innerHTML = allStyleData;
-				delete staggerCreate[id]
-			}
-		}
+    allStyleData = `${allStyleData}${cssText.keyframes}${cssText.elementStyle}`;
+		setInnerHtml(allStyleData)
     //}
     //styleEl.innerHTML += cssText.elementStyle;
     //console.log(cssText)
@@ -815,7 +792,7 @@ let animations = [];
    return importantArray && importantArray.some(value => value === property)
   }
   const dump = () => {
-    return styleEl.innerHTML;
+    return {html:styleEl.innerHTML,local:allStyleData};
   }
   const matrixDeconstruct = (tr) => {
     if(!tr){
