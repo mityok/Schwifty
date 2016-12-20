@@ -355,6 +355,7 @@ let animations = [];
       const className = selector ? selector : `.${id}`;
       const animName = getId() || selector;
       if (toVars.immediateRender && !specialEasings.some(ease => ease === toVars.ease)) {
+
         toVars = Object.assign({}, toVars, resampleDomValues(elem, className, toVars), {
           original: toVars
         })
@@ -582,7 +583,7 @@ let animations = [];
   const compareUnitsForVars = (fromVars, toVars) => {
     let allEqualUnits = true;
     let notEqualVars = null;
-    //console.log('compareUnitsForVars',fromVars, toVars)
+    console.log('compareUnitsForVars',fromVars, toVars)
     if (!fromVars) {
       return {
         allEqualUnits: false,
@@ -658,7 +659,7 @@ let animations = [];
         res,
         notEqualVars
       } = compareUnitsForVars(fromVars, toVars)
-      //console.log('recheck',allEqualUnits,res,notEqualVars)
+      console.log('recheck',allEqualUnits,res,notEqualVars)
       if (allEqualUnits) {
         return buildKeyFramesAnimation(res, animationName)
       } else {
@@ -674,7 +675,7 @@ let animations = [];
           allEqualUnits,
           res
         } = compareUnitsForVars(fromVars, toVars);
-        //console.log('recheck',allEqualUnits,res)
+        console.log('recheck',allEqualUnits,res)
         if (allEqualUnits) {
           return buildKeyFramesAnimation(res, animationName);
         }
@@ -688,6 +689,7 @@ let animations = [];
       test = `${className}{${constructAnimation(vars, true)}}`;
       allStyleData += test;
     }
+    setInnerHtml(allStyleData);
     //not all units are equal need to resample the element
     const varsFixed = crossReferenceWithExpectedVars(getAnimationVars(vars || otherVars), getInterruptedValues(elem));
     if (test) {
@@ -711,7 +713,7 @@ let animations = [];
     return arr;
   };
   const createSheet = (elem, duration, fromVars, toVars, animationName, className, stagger) => {
-   // console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate,staggerCreate[stagger.id])
+   console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate)
     const prevValues = fixedParamsStorage[className]
     if (prevValues) {
       toVars = Object.assign({}, prevValues.vars, toVars)
