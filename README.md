@@ -24,5 +24,5 @@
   Showcase:
   
   1. [performance](https://jsfiddle.net/mityok/n2yf5ghd/)
-  2. [use cases](https://jsfiddle.net/mityok/n2yf5ghd/)
+  2. [use cases](https://jsfiddle.net/mityok/8fz4qh0z/1/)
  
