@@ -21,5 +21,8 @@
   1. will-change improves dramatically - should add on animation
   2. need to optimize add and remove on stagger (no multiple createSheet and removeCompleted)
   
-
+  Showcase:
+  
+  1. [performance](https://jsfiddle.net/mityok/n2yf5ghd/)
+  2. [use cases](https://jsfiddle.net/mityok/n2yf5ghd/)
  
