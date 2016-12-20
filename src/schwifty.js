@@ -583,7 +583,7 @@ let animations = [];
   const compareUnitsForVars = (fromVars, toVars) => {
     let allEqualUnits = true;
     let notEqualVars = null;
-    console.log('compareUnitsForVars',fromVars, toVars)
+    //console.log('compareUnitsForVars',fromVars, toVars)
     if (!fromVars) {
       return {
         allEqualUnits: false,
@@ -659,7 +659,7 @@ let animations = [];
         res,
         notEqualVars
       } = compareUnitsForVars(fromVars, toVars)
-      console.log('recheck',allEqualUnits,res,notEqualVars)
+      //console.log('recheck',allEqualUnits,res,notEqualVars)
       if (allEqualUnits) {
         return buildKeyFramesAnimation(res, animationName)
       } else {
@@ -675,7 +675,7 @@ let animations = [];
           allEqualUnits,
           res
         } = compareUnitsForVars(fromVars, toVars);
-        console.log('recheck',allEqualUnits,res)
+        //console.log('recheck',allEqualUnits,res)
         if (allEqualUnits) {
           return buildKeyFramesAnimation(res, animationName);
         }
@@ -713,7 +713,7 @@ let animations = [];
     return arr;
   };
   const createSheet = (elem, duration, fromVars, toVars, animationName, className, stagger) => {
-   console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate)
+   //console.log('createSheet', animationName, className,performance.now(), stagger, staggerCreate)
     const prevValues = fixedParamsStorage[className]
     if (prevValues) {
       toVars = Object.assign({}, prevValues.vars, toVars)
