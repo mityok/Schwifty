@@ -1,6 +1,20 @@
 # Schwifty
 
-  TODO:
+Animation library for creating and orchestrating tween animations. Based on top of CSS animations with user api inpired by Greensock library.
+
+## Code Example
+
+```javascript
+Schwifty.to(document.querySelector('.element'), 1, { left: 200, top: '10%', ease: 'easeOutElastic', delay: 0});
+```
+
+## Showcase
+
+Load testing [performance](https://jsfiddle.net/mityok/n2yf5ghd/), 
+General code examples and [use cases](https://jsfiddle.net/mityok/8fz4qh0z/1/)
+
+## Things to implement
+
   1. support for more properties animations [All CSS animated properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animated_properties)
   2. pause support
   3. support for combinig previous animation with new added one
