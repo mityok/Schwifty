@@ -1,0 +1,34 @@
+{
+  "ecmaFeatures": {
+    "modules": true
+  },
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "parser": "babel-eslint",
+  "rules": {
+    "brace-style": 2,
+    "indent": [1, 2, {"SwitchCase": 1}],
+    "quotes": [2, "single"],
+    "strict": [2, "never"],
+    "semi": [2, "always"],
+    "arrow-spacing": 2,
+    "comma-spacing": [2, {"before": false, "after": true}],
+    "no-const-assign": 2,
+    "comma-dangle": [2, "never"],
+    "no-var": 2,
+    "prefer-const": 1,
+    "prefer-reflect": 1,
+    "prefer-spread": 1,
+    "prefer-template": 1,
+    "generator-star-spacing": 1,
+    "object-shorthand": 1,
+    "babel/new-cap": 0,
+    "babel/arrow-parens": 0,
+    "babel/no-await-in-loop": 0
+  },
+  "plugins": [
+    
+  ]
+}
