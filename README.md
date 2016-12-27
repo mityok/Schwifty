@@ -1,6 +1,6 @@
 # Schwifty
 
-Animation library for creating and orchestrating tween animations. Based on top of CSS animations with user api inpired by Greensock library.
+Animation library for creating and orchestrating tween animations. Based on top of CSS animations, with user API inpired by GSAP library.
 
 ## Code Example
 
@@ -19,19 +19,14 @@ General code examples and [use cases](https://jsfiddle.net/mityok/8fz4qh0z/1/)
   2. pause support
   3. support for combinig previous animation with new added one
   4. handle for element removal
-  5. create showcase/tests for various scenarios
-  6. add support for pseudo elements
-  7. add support for easing functions - (elastic requires initial value)
-  8. width/height/left/right/top/bottom/etc needs starting value
-  9. add support for incremental values - x:'-=50'
-  10. add support for calc value
-  11. flatten floating point values
-  12. optimize elastic resampling for stagger
-  13. stop stagger
-  14. on stagger with simillar values create joined class rule 
-  
-  performance:
-  
-  1. will-change improves dramatically - should add on animation
-  2. need to optimize add and remove on stagger (no multiple createSheet and removeCompleted)
+  5. add support for pseudo elements
+  6. add support for easing functions - (elastic requires initial value)
+  7. width/height/left/right/top/bottom/etc needs starting value
+  8. add support for incremental values - x:'-=50'
+  9. add support for calc value
+  10. flatten floating point values
+  11. optimize elastic resampling for stagger
+  12. stop stagger
+  13. on stagger with simillar values create joined class rule 
+  14. will-change improves dramatically - should add on animation
   
